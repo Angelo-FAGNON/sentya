@@ -1,0 +1,707 @@
+// Schéma de données de Sentya (PostgreSQL 16, Prisma 7).
+//
+// Principes :
+// - Les fiches du référentiel (Metier, Formation, Programme, Opportunite, ModeleEtape)
+//   portent toujours : pays, sourceUrl (obligatoire), verifieLe, statut (RG-04).
+// - Toutes les données d'un jeune sont rattachées à User avec suppression en cascade
+//   (RG-11). Les tables d'analyse ne contiennent aucune identité, seulement un hachage.
+// - Aucune ligne n'est créée pour un jeune avant consentement et âge confirmé (RG-01, RG-02).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Énumérations
+// ---------------------------------------------------------------------------
+
+/// Pays pilotes (codes ISO 3166-1 alpha-2).
+enum Pays {
+  BJ
+  TG
+}
+
+/// Statut de toute fiche du référentiel.
+enum Statut {
+  BROUILLON
+  VERIFIEE
+  A_VERIFIER
+  SUSPENDUE
+}
+
+/// Voie d'accès à un métier.
+enum Voie {
+  EMPLOI
+  FORMATION_CERTIFICATION
+  AUTO_EMPLOI
+}
+
+/// Origine d'une réponse au bilan.
+enum SourceType {
+  TEXTE
+  VOCAL
+  CV
+}
+
+/// Canal de conversation. Seul TELEGRAM est implémenté dans le MVP.
+enum Canal {
+  TELEGRAM
+  WHATSAPP
+}
+
+/// Niveau d'études normalisé (la réponse brute reste dans BilanReponse).
+enum NiveauEtudes {
+  AUCUN_DIPLOME
+  PRIMAIRE
+  SECONDAIRE
+  BAC
+  CERTIFICAT_PRO
+  SUPERIEUR
+  AUTRE
+}
+
+/// Objectif déclaré par le jeune.
+enum Objectif {
+  EMPLOI
+  FORMATION
+  PROPRE_ACTIVITE
+  NE_SAIT_PAS
+}
+
+/// D'où vient une compétence rattachée au jeune.
+enum OrigineCompetence {
+  BILAN
+  CV
+  CORRECTION
+}
+
+/// Avancement d'une étape du plan.
+enum EtapeStatut {
+  A_FAIRE
+  FAIT
+  BLOQUE
+  ABANDONNE
+}
+
+/// Rappels automatiques (EF-08).
+enum TypeRappel {
+  J3
+  J7
+  J30
+}
+
+enum TypePartenaire {
+  CENTRE_FORMATION
+  EMPLOYEUR
+}
+
+enum StatutValidation {
+  EN_ATTENTE
+  VALIDE
+  REFUSE
+}
+
+enum CandidatureStatut {
+  ENVOYEE
+  VUE
+  RETENUE
+  NON_RETENUE
+}
+
+/// Décision d'un curateur sur un signalement.
+enum DecisionSignalement {
+  FRAUDE_CONFIRMEE
+  REJETE
+}
+
+/// Façon d'appliquer une règle de fraude au texte d'une offre.
+enum TypeMotif {
+  MOT_CLE
+  REGEX
+}
+
+/// Famille de signal de fraude (EF-10).
+enum CategorieFraude {
+  FRAIS_CANDIDAT
+  PAIEMENT_ENTRETIEN
+  WHATSAPP_SEUL
+  SALAIRE_IRREALISTE
+  AUTRE
+}
+
+enum RoleAdmin {
+  ADMIN
+  CURATEUR
+}
+
+enum TypeActeur {
+  ADMIN
+  PARTENAIRE
+}
+
+// ---------------------------------------------------------------------------
+// Jeunes et conversation
+// ---------------------------------------------------------------------------
+
+/// Profil d'un jeune. Créé uniquement après consentement ET âge confirmé.
+model User {
+  id                String        @id @default(cuid())
+  /// Identifiant Telegram brut : nécessaire pour envoyer les rappels.
+  /// Mis à null lors de l'anonymisation (RG-12).
+  telegramId        BigInt?       @unique
+  /// HMAC-SHA256 de l'identifiant de canal avec un sel secret : seule clé utilisée
+  /// dans les analyses et les journaux. Remplacé par une valeur aléatoire lors de
+  /// l'anonymisation, pour que la même personne puisse recréer un profil.
+  userHash          String        @unique
+  canal             Canal         @default(TELEGRAM)
+  /// Code court du lien profond t.me (ex. "qr", "affiche"), pour l'indicateur par canal.
+  sourceAcquisition String?
+  prenom            String?
+  pays              Pays
+  ville             String?
+  niveauEtudes      NiveauEtudes?
+  objectif          Objectif?
+  consentAt         DateTime
+  ageConfirmed      Boolean
+  audioReplies      Boolean       @default(false)
+  lastActiveAt      DateTime      @default(now())
+  /// Renseigné quand le profil a été anonymisé après 12 mois d'inactivité (RG-12).
+  anonymiseLe       DateTime?
+  createdAt         DateTime      @default(now())
+
+  conversation  ConversationState?
+  reponses      BilanReponse[]
+  competences   UserCompetence[]
+  pistes        Piste[]
+  plans         Plan[]
+  signalements  Signalement[]
+  candidatures  Candidature[]
+  liensMagiques MagicLink[]
+
+  @@index([lastActiveAt])
+}
+
+/// État persistant de la machine à états du bot (reprise après coupure).
+model ConversationState {
+  userId    String   @id
+  /// Nom de l'étape courante (ex. "BILAN_ACTIVITES", "VALIDATION_COMPETENCES").
+  etape     String
+  /// Données de travail de l'étape (question en cours, brouillons, lot de pistes).
+  donnees   Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Réponse à une question du bilan, déjà filtrée des données sensibles (RG-08).
+model BilanReponse {
+  id         String     @id @default(cuid())
+  userId     String
+  /// Clé de la question (ex. "activites", "duree", "aime", "ville", "etudes", "objectif").
+  question   String
+  texte      String
+  sourceType SourceType
+  createdAt  DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Référentiel
+// ---------------------------------------------------------------------------
+
+/// Compétence du référentiel commun aux deux pays (pas de pays ni de statut :
+/// c'est un vocabulaire, pas une information pratique).
+model Competence {
+  /// Identifiant lisible et stable (ex. "couture-retouche"), utilisé par l'IA.
+  id        String   @id
+  libelle   String
+  synonymes String[]
+  domaine   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  metiers      MetierCompetence[]
+  utilisateurs UserCompetence[]
+
+  @@index([domaine])
+}
+
+model UserCompetence {
+  userId       String
+  competenceId String
+  origine      OrigineCompetence
+  /// Vrai quand le jeune a confirmé le récapitulatif (EF-03).
+  validee      Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competence Competence @relation(fields: [competenceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, competenceId])
+}
+
+model Metier {
+  /// Identifiant lisible et stable (ex. "bj-mecanique-moto"), utilisé par l'IA.
+  id          String    @id
+  pays        Pays
+  libelle     String
+  description String
+  /// Où ce métier existe dans le pays (villes, secteurs).
+  ouExiste    String
+  sourceUrl   String
+  /// Null tant que la fiche n'a jamais été vérifiée par un curateur.
+  verifieLe   DateTime?
+  statut      Statut    @default(BROUILLON)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  competences  MetierCompetence[]
+  formations   MetierFormation[]
+  modeles      ModeleEtape[]
+  pistes       Piste[]
+  opportunites Opportunite[]
+
+  @@index([pays, statut])
+}
+
+model MetierCompetence {
+  metierId     String
+  competenceId String
+  /// Importance de la compétence pour le métier, de 1 (utile) à 3 (essentielle).
+  poids        Int
+
+  metier     Metier     @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  competence Competence @relation(fields: [competenceId], references: [id], onDelete: Cascade)
+
+  @@id([metierId, competenceId])
+}
+
+model Formation {
+  id                String    @id @default(cuid())
+  pays              Pays
+  intitule          String
+  organisme         String
+  /// Texte libre ("6 mois", ou "À vérifier par le curateur").
+  dureeIndicative   String
+  /// Null quand le coût n'est pas confirmé : affiché "À vérifier par le curateur".
+  coutIndicatifFcfa Int?
+  sourceUrl         String
+  verifieLe         DateTime?
+  statut            Statut    @default(BROUILLON)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  metiers MetierFormation[]
+  modeles ModeleEtape[]
+  etapes  PlanEtape[]
+
+  @@index([pays, statut])
+}
+
+model MetierFormation {
+  metierId    String
+  formationId String
+
+  metier    Metier    @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  formation Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+
+  @@id([metierId, formationId])
+}
+
+/// Programme public (ex. Azôli, programme AIDE).
+model Programme {
+  id          String    @id @default(cuid())
+  pays        Pays
+  nom         String
+  description String
+  publicCible String
+  conditions  String
+  contact     String
+  /// Voies pour lesquelles le programme est pertinent.
+  voies       Voie[]
+  sourceUrl   String
+  verifieLe   DateTime?
+  statut      Statut    @default(BROUILLON)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  modeles ModeleEtape[]
+  etapes  PlanEtape[]
+
+  @@index([pays, statut])
+}
+
+/// Étape type d'un plan, par métier et par voie (3 étapes : ordre 1, 2, 3).
+model ModeleEtape {
+  id          String    @id @default(cuid())
+  metierId    String
+  voie        Voie
+  ordre       Int
+  titre       String
+  details     String
+  /// Échéance de l'étape, en jours après la création du plan.
+  delaiJours  Int
+  programmeId String?
+  formationId String?
+  sourceUrl   String
+  verifieLe   DateTime?
+  statut      Statut    @default(BROUILLON)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  metier    Metier      @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  programme Programme?  @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  formation Formation?  @relation(fields: [formationId], references: [id], onDelete: SetNull)
+  etapes    PlanEtape[]
+
+  @@unique([metierId, voie, ordre])
+}
+
+// ---------------------------------------------------------------------------
+// Pistes, plans et rappels
+// ---------------------------------------------------------------------------
+
+/// Piste proposée à un jeune. Toujours liée à un métier du référentiel (RG-03).
+model Piste {
+  id                  String   @id @default(cuid())
+  userId              String
+  /// Identifiant du lot de 3 pistes générées ensemble.
+  lotId               String
+  /// Position d'affichage dans le lot (1 à 3).
+  rang                Int
+  metierId            String
+  voie                Voie
+  raison              String
+  conditionPrincipale String
+  /// Vrai quand la piste vient du repli déterministe et non du choix de l'IA.
+  aExplorer           Boolean  @default(false)
+  choisie             Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metier Metier @relation(fields: [metierId], references: [id], onDelete: Restrict)
+  plan   Plan?
+
+  @@unique([lotId, rang])
+  @@index([userId, createdAt])
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  userId    String
+  pisteId   String   @unique
+  /// Un seul plan actif par jeune ; /changer désactive l'ancien.
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  piste   Piste       @relation(fields: [pisteId], references: [id], onDelete: Cascade)
+  etapes  PlanEtape[]
+  rappels Rappel[]
+
+  @@index([userId, actif])
+}
+
+/// Étape concrète d'un plan. Les informations pratiques sont copiées depuis la base
+/// avec leur source et leur date, pour rester affichables même si la fiche change.
+model PlanEtape {
+  id            String      @id @default(cuid())
+  planId        String
+  ordre         Int
+  titre         String
+  details       String
+  echeance      DateTime
+  statut        EtapeStatut @default(A_FAIRE)
+  /// Raison donnée pour BLOQUE ou ABANDONNE.
+  raison        String?
+  statutMajLe   DateTime?
+  modeleEtapeId String?
+  programmeId   String?
+  formationId   String?
+  opportuniteId String?
+  sourceUrl     String
+  verifieLe     DateTime?
+
+  plan        Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  modeleEtape ModeleEtape? @relation(fields: [modeleEtapeId], references: [id], onDelete: SetNull)
+  programme   Programme?   @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  formation   Formation?   @relation(fields: [formationId], references: [id], onDelete: SetNull)
+  opportunite Opportunite? @relation(fields: [opportuniteId], references: [id], onDelete: SetNull)
+
+  @@unique([planId, ordre])
+}
+
+/// Rappel programmé pour un plan. pg-boss déclenche, cette table garantit l'idempotence
+/// (un rappel déjà envoyé n'est jamais renvoyé) et permet les tests avec horloge simulée.
+model Rappel {
+  id       String     @id @default(cuid())
+  planId   String
+  type     TypeRappel
+  prevuLe  DateTime
+  envoyeLe DateTime?
+  /// Identifiant du travail pg-boss associé.
+  jobId    String?
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, type])
+  @@index([prevuLe, envoyeLe])
+}
+
+// ---------------------------------------------------------------------------
+// Partenaires, opportunités, signalements
+// ---------------------------------------------------------------------------
+
+model Partenaire {
+  id               String           @id @default(cuid())
+  type             TypePartenaire
+  nom              String
+  pays             Pays
+  contactOfficiel  String
+  statutValidation StatutValidation @default(EN_ATTENTE)
+  valideLe         DateTime?
+  valideParId      String?
+  createdAt        DateTime         @default(now())
+
+  comptes      PartenaireCompte[]
+  opportunites Opportunite[]
+  validePar    AdminUser?         @relation(fields: [valideParId], references: [id], onDelete: SetNull)
+}
+
+/// Compte de connexion d'un membre d'une organisation partenaire.
+model PartenaireCompte {
+  id                String    @id @default(cuid())
+  partenaireId      String
+  email             String    @unique
+  /// Hachage argon2id.
+  motDePasseHache   String
+  derniereConnexion DateTime?
+  createdAt         DateTime  @default(now())
+
+  partenaire Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
+}
+
+/// Opportunité (offre d'emploi, place en formation...). Proposée au jeune
+/// uniquement au statut VERIFIEE (EF-09, RG-05).
+model Opportunite {
+  id             String    @id @default(cuid())
+  partenaireId   String?
+  pays           Pays
+  metierId       String?
+  titre          String
+  description    String
+  lieu           String
+  contact        String
+  sourceUrl      String
+  verifieLe      DateTime?
+  statut         Statut    @default(BROUILLON)
+  /// Compteur conservé même si un signaleur supprime son compte (RG-06).
+  nbSignalements Int       @default(0)
+  /// Date de la suspension automatique : déclenche l'alerte de revue sous 48 heures.
+  suspendueLe    DateTime?
+  /// Date de la revue humaine après suspension.
+  revueLe        DateTime?
+  /// Résultat de l'analyse automatique des règles de fraude à la soumission.
+  alerteFraude   Boolean   @default(false)
+  motifsAlerte   String[]
+  dateLimite     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  partenaire   Partenaire?   @relation(fields: [partenaireId], references: [id], onDelete: SetNull)
+  metier       Metier?       @relation(fields: [metierId], references: [id], onDelete: SetNull)
+  signalements Signalement[]
+  candidatures Candidature[]
+  etapes       PlanEtape[]
+
+  @@index([pays, statut])
+  @@index([statut, suspendueLe])
+}
+
+/// Signalement d'arnaque. Un jeune ne peut signaler qu'une fois la même opportunité.
+model Signalement {
+  id            String               @id @default(cuid())
+  opportuniteId String
+  userId        String
+  motif         String
+  createdAt     DateTime             @default(now())
+  traite        Boolean              @default(false)
+  decision      DecisionSignalement?
+  traiteLe      DateTime?
+  traiteParId   String?
+
+  opportunite Opportunite @relation(fields: [opportuniteId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  traitePar   AdminUser?  @relation(fields: [traiteParId], references: [id], onDelete: SetNull)
+
+  @@unique([opportuniteId, userId])
+  @@index([traite, createdAt])
+}
+
+/// Candidature transmise à un partenaire, uniquement avec accord explicite (RG-07).
+model Candidature {
+  id            String            @id @default(cuid())
+  userId        String
+  opportuniteId String
+  /// Date de l'accord explicite du jeune pour CETTE opportunité.
+  consentAt     DateTime
+  statut        CandidatureStatut @default(ENVOYEE)
+  createdAt     DateTime          @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunite Opportunite @relation(fields: [opportuniteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportuniteId])
+}
+
+/// Règle de détection de fraude, configurable dans le back-office (EF-10).
+/// S'applique aux deux pays : pas de champ pays.
+model RegleFraude {
+  id          String          @id @default(cuid())
+  motif       String
+  typeMotif   TypeMotif       @default(MOT_CLE)
+  categorie   CategorieFraude
+  description String
+  /// Vrai si la règle entraîne le refus de l'offre (ex. frais demandés, RG-05).
+  bloquante   Boolean         @default(false)
+  actif       Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Qualité, analyses, journaux (aucune donnée d'identité)
+// ---------------------------------------------------------------------------
+
+/// Conversation pseudonymisée tirée au sort pour la revue qualité hebdomadaire.
+/// Pas de clé étrangère vers User, mais le hachage permet de la supprimer
+/// avec le compte (RG-11) ou à l'anonymisation (RG-12).
+model RevueQualite {
+  id                     String    @id @default(cuid())
+  /// Semaine ISO de l'échantillon (ex. "2026-W47").
+  semaine                String
+  /// Hachage du jeune, uniquement pour purger l'échantillon. Jamais affiché.
+  userHash               String?
+  /// Réponses pseudonymisées, compétences et pistes proposées (JSON).
+  conversationAnonymisee Json
+  recommandationId       String?
+  pistesCorrectes        Boolean?
+  inventionDetectee      Boolean?
+  commentaire            String?
+  relecteurId            String?
+  noteeLe                DateTime?
+  createdAt              DateTime  @default(now())
+
+  relecteur AdminUser? @relation(fields: [relecteurId], references: [id], onDelete: SetNull)
+
+  @@index([semaine])
+  @@index([userHash])
+}
+
+/// Journal explicable de chaque recommandation (sans identité).
+model RecommandationLog {
+  id                 String   @id @default(cuid())
+  userHash           String
+  lotId              String   @unique
+  pays               Pays
+  promptVersion      String
+  modele             String
+  /// Métiers présentés à l'IA après la présélection en code (étape 1).
+  metierIdsCandidats String[]
+  /// Métiers retenus et affichés (étape 3).
+  metierIdsProposes  String[]
+  /// Métiers ajoutés par le repli déterministe ("à explorer").
+  metierIdsAExplorer String[]
+  /// Identifiants rejetés par la validation serveur (hors référentiel).
+  idsRejetes         String[]
+  /// Sources des fiches utilisées : [{ metierId, sourceUrl, verifieLe }].
+  sources            Json
+  /// Vrai si l'IA a échoué deux fois et que tout vient du repli.
+  repliTotal         Boolean  @default(false)
+  dureeMs            Int
+  createdAt          DateTime @default(now())
+
+  @@index([userHash])
+  @@index([createdAt])
+}
+
+/// Événement d'analyse. Les indicateurs du tableau de bord sont calculés ici, pour
+/// survivre à la suppression et à l'anonymisation des profils.
+model EvenementAnalytique {
+  id        String   @id @default(cuid())
+  /// Ex. "profil_cree", "bilan_termine", "plan_cree", "etape_statut", "signalement".
+  type      String
+  userHash  String?
+  canal     Canal?
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([userHash])
+}
+
+/// Mises à jour Telegram déjà traitées (idempotence). Ne contient que l'update_id.
+model ProcessedUpdate {
+  updateId BigInt   @id
+  recuLe   DateTime @default(now())
+
+  @@index([recuLe])
+}
+
+/// Lien magique à usage unique pour consulter son plan sur le web (EF-11).
+model MagicLink {
+  id        String    @id @default(cuid())
+  /// SHA-256 du jeton : le jeton en clair n'est jamais stocké.
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Back-office
+// ---------------------------------------------------------------------------
+
+model AdminUser {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  /// Hachage argon2id.
+  motDePasseHache   String
+  /// Secret TOTP chiffré (AES-256-GCM). Null tant que la double authentification
+  /// n'est pas configurée.
+  totpSecret        String?
+  totpActive        Boolean   @default(false)
+  role              RoleAdmin @default(CURATEUR)
+  actif             Boolean   @default(true)
+  derniereConnexion DateTime?
+  createdAt         DateTime  @default(now())
+
+  partenairesValides  Partenaire[]
+  signalementsTraites Signalement[]
+  revues              RevueQualite[]
+}
+
+/// Journal des accès et des actions dans le back-office et l'espace partenaire.
+model JournalAcces {
+  id         String     @id @default(cuid())
+  acteurType TypeActeur
+  acteurId   String
+  action     String
+  ressource  String?
+  ip         String?
+  createdAt  DateTime   @default(now())
+
+  @@index([acteurType, acteurId, createdAt])
+  @@index([createdAt])
+}

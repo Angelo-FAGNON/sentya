@@ -1,0 +1,34 @@
+{
+  "name": "sentya",
+  "private": true,
+  "description": "Sentya : conseiller d'orientation professionnelle sur Telegram (Bénin, Togo)",
+  "type": "module",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev:bot": "pnpm --filter @sentya/bot dev",
+    "dev:web": "pnpm --filter @sentya/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "eslint . && node scripts/check-conventions.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:conventions": "node scripts/check-conventions.mjs",
+    "db:generate": "pnpm --filter @sentya/db generate",
+    "db:migrate": "pnpm --filter @sentya/db migrate:dev",
+    "db:deploy": "pnpm --filter @sentya/db migrate:deploy",
+    "db:seed": "pnpm --filter @sentya/db seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prettier": "^3.10.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.73.0"
+  }
+}

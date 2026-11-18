@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Paquets autorisés à exécuter leurs scripts d'installation (binaires natifs).
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - "prisma"
+  - "argon2"
+  - "esbuild"
