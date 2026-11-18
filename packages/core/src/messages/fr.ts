@@ -225,6 +225,30 @@ export const fr = {
   tropRapide: "Tu vas un peu vite. Attends une minute, puis réessaie.",
   nonCompris: "Je n'ai pas compris. Utilise les boutons ou réponds à la question.",
   commencerParStart: "Tape /start pour commencer.",
+  boutonPdf: "Recevoir en PDF",
+  vocalTropLong: "Ton vocal est trop long. Envoie un vocal de moins de 3 minutes.",
+
+  // --- Menu des commandes affiché par Telegram ---
+  commandes: {
+    start: "Commencer ou reprendre",
+    plan: "Voir mon plan",
+    changer: "Changer de piste",
+    recommencer: "Refaire mon bilan",
+    monplan: "Voir mon plan sur le web",
+    parametres: "Réponses en audio",
+    supprimer: "Effacer mes données",
+  },
+
+  // --- PDF du plan ---
+  pdf: {
+    titre: "Mon plan Sentya",
+    pisteChoisie: (libelle: string, voie: string) => `Piste choisie : ${libelle} (${voie})`,
+    creeLe: (date: string) => `Plan créé le ${date}`,
+    etapeTitre: (ordre: number, titre: string) => `Étape ${ordre} : ${titre}`,
+    echeance: (date: string) => `À faire avant le ${date}`,
+    statutEtape: (statut: string) => `Statut : ${statut}`,
+    piedDePage: "Ces pistes sont des suggestions. La décision t'appartient. Sentya est gratuit.",
+  },
 } as const;
 
 export type Messages = typeof fr;

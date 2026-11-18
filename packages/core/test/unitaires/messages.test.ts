@@ -52,6 +52,11 @@ const EXEMPLES: Record<string, unknown[]> = {
   ],
   consentementCandidature: ["Atelier Exemple"],
   parametres: [true],
+  pisteChoisie: ["Couturier", "Emploi"],
+  creeLe: ["18/11/2026"],
+  etapeTitre: [1, "Va à l'atelier"],
+  echeance: ["01/12/2026"],
+  statutEtape: ["À faire"],
 };
 
 /** Collecte tous les textes du fichier de messages. */

@@ -100,6 +100,8 @@ export interface EntreeExtractionBilan {
   nomsConnus?: (string | null | undefined)[];
   /** CV en PDF ou en image (EF-04). */
   cv?: PartieMedia;
+  /** Dernier essai après une indisponibilité : repli sans IA. */
+  repliSiIndisponible?: boolean;
 }
 
 /** Extrait les compétences d'un bilan (ou d'un CV) et les relie au référentiel. */
@@ -122,6 +124,7 @@ export async function extraireCompetences(
       media: entree.cv,
       schema: schemaExtraction,
       delaiMs: DELAI_EXTRACTION_MS,
+      repliSiIndisponible: entree.repliSiIndisponible,
     },
     ctx.journal,
   );
@@ -163,7 +166,12 @@ const MOTS_RETRAIT =
 /** Correction par le jeune : ajouter ou retirer des compétences (texte ou vocal transcrit). */
 export async function interpreterCorrection(
   ctx: Contexte,
-  entree: { demande: string; actuelles: string[]; nomsConnus?: (string | null | undefined)[] },
+  entree: {
+    demande: string;
+    actuelles: string[];
+    nomsConnus?: (string | null | undefined)[];
+    repliSiIndisponible?: boolean;
+  },
 ): Promise<{ ajouter: string[]; retirer: string[] }> {
   const referentiel = await chargerReferentiel(ctx.prisma);
   const parId = new Map(referentiel.map((c) => [c.id, c]));
@@ -184,6 +192,7 @@ export async function interpreterCorrection(
       }),
       schema: schemaCorrection,
       delaiMs: DELAI_EXTRACTION_MS,
+      repliSiIndisponible: entree.repliSiIndisponible,
     },
     ctx.journal,
   );

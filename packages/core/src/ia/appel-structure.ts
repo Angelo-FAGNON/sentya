@@ -21,6 +21,8 @@ export interface ParametresAppel<S extends z.ZodType> {
   media?: PartieMedia;
   schema: S;
   delaiMs: number;
+  /** Dernier essai : une indisponibilité de l'IA déclenche le repli au lieu d'une erreur. */
+  repliSiIndisponible?: boolean;
 }
 
 export type ResultatAppel<T> =
@@ -56,7 +58,11 @@ export async function appelerAvecSchema<S extends z.ZodType>(
       }
       erreurs.push(`validation : ${resultat.error.issues.map((i) => i.message).join(", ")}`);
     } catch (erreur) {
-      if (erreur instanceof IAIndisponibleError) throw erreur;
+      if (erreur instanceof IAIndisponibleError) {
+        if (!parametres.repliSiIndisponible) throw erreur;
+        journal.warn({ prompt: parametres.version }, "IA indisponible au dernier essai : repli");
+        return { ok: false, tentatives: tentative, erreurs: [...erreurs, "indisponible"] };
+      }
       if (erreur instanceof SortieIAInvalideError) {
         erreurs.push(erreur.message);
       } else {

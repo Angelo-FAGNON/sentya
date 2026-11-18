@@ -47,3 +47,9 @@ export * from "./regles/suppression";
 export * from "./analytique/evenements";
 export * from "./analytique/indicateurs";
 export * from "./qualite/revue";
+
+export * from "./parcours/actions";
+export * from "./parcours/envoi";
+export * from "./parcours/moteur";
+export * from "./parcours/rappels";
+export * from "./parcours/types";
