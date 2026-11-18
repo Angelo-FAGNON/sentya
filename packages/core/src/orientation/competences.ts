@@ -45,13 +45,13 @@ export async function chargerReferentiel(prisma: ClientBase): Promise<Competence
   });
 }
 
-const RADICAL = 5;
+const RADICAL = 4;
 const radical = (mot: string) => mot.slice(0, RADICAL);
 
 /**
  * Repli sans IA : une compétence est repérée si son libellé ou un synonyme apparaît
  * dans le texte, ou si tous les mots significatifs d'un synonyme y apparaissent
- * (comparaison sur les 5 premières lettres, pour tolérer pluriels et conjugaisons).
+ * (comparaison sur les 4 premières lettres, pour tolérer pluriels et conjugaisons).
  */
 export function correspondanceDeterministe(
   texte: string,
