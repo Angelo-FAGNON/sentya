@@ -1,5 +1,7 @@
-// Interface d'un fournisseur d'IA. Gemini est l'implémentation de production ;
-// un fournisseur factice sert aux tests (aucun appel réseau).
+// Interface d'un fournisseur d'IA. En production : Claude (Anthropic) pour le raisonnement,
+// Gemini (Google) pour l'audio seulement, réunis par FournisseurComposite.
+// Un fournisseur factice sert aux tests (aucun appel réseau).
+import type { z } from "zod";
 
 export interface PartieMedia {
   mimeType: string;
@@ -12,6 +14,9 @@ export interface RequeteJson {
   systeme: string;
   texte: string;
   media?: PartieMedia;
+  /** Schéma zod de la sortie attendue (utilisé par Claude pour les sorties structurées). */
+  schema: z.ZodType;
+  /** Le même schéma en JSON Schema (utilisé par Gemini). */
   schemaJson: Record<string, unknown>;
   /** Délai maximal de l'appel, en millisecondes. */
   delaiMs: number;
@@ -25,6 +30,11 @@ export interface AudioSynthetise {
 
 export interface FournisseurIA {
   readonly modele: string;
+  /**
+   * Faux si ce fournisseur ne peut ni transcrire un vocal ni produire de voix.
+   * Le parcours demande alors au jeune d'écrire, et l'option audio est retirée.
+   */
+  readonly audioDisponible?: boolean;
   /** Renvoie le JSON brut produit par le modèle (validé ensuite par zod). */
   genererJson(requete: RequeteJson): Promise<unknown>;
   synthetiserVoix(texte: string, delaiMs: number): Promise<AudioSynthetise>;

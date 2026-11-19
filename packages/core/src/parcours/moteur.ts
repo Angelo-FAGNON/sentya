@@ -98,7 +98,12 @@ export async function traiterMessage(
   }
 
   // EF-14 : réponse audio en plus du texte. Le compte peut avoir été supprimé entre-temps.
-  if (user.audioReplies && deps.convertirVoix && envoi.textes.length > 0) {
+  if (
+    user.audioReplies &&
+    ctx.ia.audioDisponible !== false &&
+    deps.convertirVoix &&
+    envoi.textes.length > 0
+  ) {
     const encore = await ctx.prisma.user.findUnique({
       where: { id: user.id },
       select: { audioReplies: true },
@@ -327,6 +332,10 @@ async function traiterCommande(
       return;
     }
     case "parametres":
+      if (ctx.ia.audioDisponible === false) {
+        await envoi.texte(fr.audioIndisponible);
+        return;
+      }
       await envoi.texte(fr.parametres(user.audioReplies), {
         boutons: [
           user.audioReplies
@@ -411,6 +420,10 @@ async function traiterActionGlobale(
     }
     case "audio": {
       const actif = args[0] === "on";
+      if (actif && ctx.ia.audioDisponible === false) {
+        await envoi.texte(fr.audioIndisponible);
+        return true;
+      }
       await ctx.prisma.user.update({ where: { id: user.id }, data: { audioReplies: actif } });
       user.audioReplies = actif;
       await envoi.texte(actif ? fr.audioActive : fr.audioDesactive);
@@ -1212,6 +1225,11 @@ async function transcrire(
   question: string,
   derniereTentative?: boolean,
 ): Promise<string | null> {
+  // Pas de fournisseur audio (pas de clé Gemini) : on demande d'écrire, sans télécharger.
+  if (deps.ctx.ia.audioDisponible === false) {
+    await envoi.texte(fr.vocalNonDisponible);
+    return null;
+  }
   if (
     (fichier.dureeSecondes ?? 0) > VOCAL_SECONDES_MAX ||
     (fichier.tailleOctets ?? 0) > FICHIER_OCTETS_MAX
@@ -1244,7 +1262,7 @@ async function transcrire(
   return resultat.donnees.texte.trim();
 }
 
-/** Gemini est indisponible : on garde le message, on prévient, on programme un nouvel essai. */
+/** L'IA est indisponible : on garde le message, on prévient, on programme un nouvel essai. */
 async function mettreEnAttente(
   deps: DependancesParcours,
   envoi: Envoi,

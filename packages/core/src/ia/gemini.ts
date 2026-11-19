@@ -1,4 +1,5 @@
-// Client Gemini (SDK officiel @google/genai).
+// Client Gemini (SDK officiel @google/genai), utilisé pour l'audio seulement :
+// transcription des vocaux et synthèse vocale (Claude ne lit pas l'audio).
 // - Sortie JSON structurée : responseMimeType + responseJsonSchema.
 // - Entrées audio (ogg/opus de Telegram), PDF et images envoyées directement au modèle.
 // - Synthèse vocale par le modèle TTS : sortie PCM 16 bits, convertie en OGG par le bot.

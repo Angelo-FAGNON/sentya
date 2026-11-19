@@ -3,11 +3,12 @@
 import { z } from "zod";
 
 const schemaConfig = z.object({
-  /** Facultative : sans clé, le bot fonctionne en mode dégradé, sans IA (FournisseurSansIA). */
-  GEMINI_API_KEY: z
-    .string()
-    .optional()
-    .transform((v) => (v && v.trim().length > 0 ? v.trim() : undefined)),
+  /** Claude (raisonnement). Sans clé : mode dégradé sans IA (FournisseurSansIA). */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  CLAUDE_MODEL: z.string().min(1).default("claude-opus-5-5"),
+  CLAUDE_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("low"),
+  /** Gemini, pour l'audio seulement (vocaux et réponses audio). Sans clé : pas d'audio. */
+  GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
   GEMINI_TTS_MODEL: z.string().min(1).default("gemini-3.8-flash-tts"),
   HASH_SALT: z.string().min(16, "HASH_SALT doit faire au moins 16 caractères."),

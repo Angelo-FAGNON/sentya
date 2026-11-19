@@ -45,7 +45,7 @@ export async function executerRappel(
     date: ctx.horloge.maintenant(),
   });
 
-  if (user.audioReplies && deps.convertirVoix) {
+  if (user.audioReplies && ctx.ia.audioDisponible !== false && deps.convertirVoix) {
     await envoyerAudio({
       ia: ctx.ia,
       canal: deps.canal,

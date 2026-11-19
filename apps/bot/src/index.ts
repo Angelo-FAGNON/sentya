@@ -2,6 +2,8 @@
 import { PgBoss } from "pg-boss";
 import {
   creerJournal,
+  FournisseurClaude,
+  FournisseurComposite,
   FournisseurGemini,
   FournisseurSansIA,
   horlogeSysteme,
@@ -22,19 +24,32 @@ async function demarrer() {
   const configBot = lireConfigBot();
   const config = lireConfig();
   const prisma = getPrisma();
+  if (!config.ANTHROPIC_API_KEY) {
+    journal.warn("ANTHROPIC_API_KEY absente : mode sans IA (replis deterministes uniquement)");
+  }
   if (!config.GEMINI_API_KEY) {
-    journal.warn("GEMINI_API_KEY absente : mode sans IA (replis deterministes uniquement)");
+    journal.warn("GEMINI_API_KEY absente : vocaux et reponses audio indisponibles");
   }
 
   const ctx: Contexte = {
     prisma,
-    ia: config.GEMINI_API_KEY
-      ? new FournisseurGemini({
-          apiKey: config.GEMINI_API_KEY,
-          modele: config.GEMINI_MODEL,
-          modeleVoix: config.GEMINI_TTS_MODEL,
-        })
-      : new FournisseurSansIA(),
+    // Claude pour le raisonnement ; Gemini pour l'audio seulement (transcription, voix).
+    ia: new FournisseurComposite(
+      config.ANTHROPIC_API_KEY
+        ? new FournisseurClaude({
+            apiKey: config.ANTHROPIC_API_KEY,
+            modele: config.CLAUDE_MODEL,
+            effort: config.CLAUDE_EFFORT,
+          })
+        : new FournisseurSansIA(),
+      config.GEMINI_API_KEY
+        ? new FournisseurGemini({
+            apiKey: config.GEMINI_API_KEY,
+            modele: config.GEMINI_MODEL,
+            modeleVoix: config.GEMINI_TTS_MODEL,
+          })
+        : undefined,
+    ),
     horloge: horlogeSysteme,
     journal,
     sel: config.HASH_SALT,

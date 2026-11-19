@@ -388,3 +388,25 @@ describe("opportunités vérifiées dans le plan", () => {
     expect(messages.some((m) => String(m.text).includes("Apprenti couturier"))).toBe(false);
   });
 });
+
+describe("sans fournisseur audio (pas de clé Gemini)", () => {
+  it("demande d'écrire au lieu de transcrire un vocal, et retire l'option audio", async () => {
+    const { jeune, ia, appels, nouveauxMessages } = env;
+    (ia as unknown as { audioDisponible: boolean }).audioDisponible = false;
+    await consentir(env);
+    nouveauxMessages();
+
+    await jeune.parle();
+    // Le bot explique, puis repose la question en cours.
+    expect(env.textes(nouveauxMessages())).toEqual([fr.vocalNonDisponible, fr.questions.activites]);
+    expect(ia.appelsPour("transcription")).toHaveLength(0);
+    expect(appels.some((a) => a.methode === "getFile")).toBe(false);
+
+    // Le jeune peut continuer par écrit, à la même question.
+    await jeune.ecrit(REPONSES_TEXTE[0]!);
+    expect(env.textes(nouveauxMessages())).toEqual([fr.questions.duree]);
+
+    await jeune.ecrit("/parametres");
+    expect(env.textes(nouveauxMessages())).toEqual([fr.audioIndisponible]);
+  });
+});

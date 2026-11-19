@@ -45,6 +45,7 @@ export async function appelerAvecSchema<S extends z.ZodType>(
         systeme: parametres.systeme,
         texte: parametres.texte,
         media: parametres.media,
+        schema: parametres.schema,
         schemaJson,
         delaiMs: parametres.delaiMs,
       });

@@ -33,7 +33,7 @@ export interface Activite {
 export interface ResultatExtraction {
   competenceIds: string[];
   activites: Activite[];
-  /** "ia" si Gemini a répondu correctement, "repli" sinon. */
+  /** "ia" si l'IA a répondu correctement, "repli" sinon. */
   origine: "ia" | "repli";
   idsRejetes: string[];
 }

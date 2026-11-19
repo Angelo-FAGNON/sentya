@@ -71,9 +71,10 @@ export const confidentialite: { titre: string; intro: string; sections: Section[
     {
       titre: "L'intelligence artificielle",
       paragraphes: [
-        "Tes messages écrits et vocaux sont traités par Gemini, un service de Google.",
+        "Tes messages écrits et ton CV sont traités par Claude, un service d'Anthropic.",
+        "Tes messages vocaux sont transcrits par Gemini, un service de Google.",
         "Avant l'envoi, Sentya retire les noms, numéros et adresses qu'il repère.",
-        "Gemini aide à comprendre tes réponses. Les informations pratiques viennent de sources vérifiées.",
+        "L'IA aide à comprendre tes réponses. Les informations pratiques viennent de sources vérifiées.",
       ],
     },
     {

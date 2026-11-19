@@ -1,5 +1,5 @@
 // Tâches planifiées avec pg-boss (adossé à PostgreSQL, sans Redis) :
-// - rappels J+3, J+7, J+30 et nouvel essai quand Gemini est indisponible ;
+// - rappels J+3, J+7, J+30 et nouvel essai quand l'IA est indisponible ;
 // - quotidiennes : péremption à 6 mois (RG-04), anonymisation à 12 mois (RG-12),
 //   purge des update_id, filet de sécurité des rappels en retard ;
 // - hebdomadaire : échantillon de revue qualité.

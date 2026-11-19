@@ -227,6 +227,8 @@ export const fr = {
   commencerParStart: "Tape /start pour commencer.",
   boutonPdf: "Recevoir en PDF",
   vocalTropLong: "Ton vocal est trop long. Envoie un vocal de moins de 3 minutes.",
+  vocalNonDisponible: "Je ne peux pas encore écouter les vocaux. Écris ta réponse, s'il te plaît.",
+  audioIndisponible: "Les réponses audio ne sont pas encore disponibles. Je t'écris en texte.",
 
   // --- Menu des commandes affiché par Telegram ---
   commandes: {

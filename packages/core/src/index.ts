@@ -14,6 +14,8 @@ export * from "./confidentialite/hachage";
 export * from "./confidentialite/pseudonymisation";
 
 export * from "./ia/appel-structure";
+export * from "./ia/claude";
+export * from "./ia/composite";
 export * from "./ia/factice";
 export * from "./ia/fournisseur";
 export * from "./ia/gemini";

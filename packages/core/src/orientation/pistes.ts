@@ -21,7 +21,7 @@ import { chargerMetiersEligibles, preselectionner, type Candidat } from "./prese
 
 export const PISTES_MAX = 3;
 /** Délai par tentative : 2 tentatives tiennent dans l'objectif de 20 secondes. */
-const DELAI_CHOIX_MS = 8_000;
+const DELAI_CHOIX_MS = 9_000;
 
 export interface PisteValidee {
   metierId: string;
@@ -182,7 +182,7 @@ export async function construireEntreePourIA(
 }
 
 /**
- * Génère et enregistre 3 pistes. Lève IAIndisponibleError si Gemini ne répond pas,
+ * Génère et enregistre 3 pistes. Lève IAIndisponibleError si l'IA ne répond pas,
  * sauf si repliSiIndisponible est vrai (dernier essai d'une tâche de reprise).
  */
 export async function genererPistes(

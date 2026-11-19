@@ -31,7 +31,7 @@ Le noyau d'orientation est gratuit pour le jeune.
 ```
 apps/bot        Bot Telegram (grammY) : polling ou webhook, tâches pg-boss, PDF, audio
 apps/web        Site public, back-office (admin, curateur) et espace partenaire (Next.js)
-packages/core   Logique métier : parcours, orientation, client Gemini, prompts, règles RG-01 à RG-12
+packages/core   Logique métier : parcours, orientation, clients Claude et Gemini, prompts, règles RG-01 à RG-12
 packages/db     Schéma Prisma, migrations et seed
 docs/           Architecture (ARCHITECTURE.md) et checklist de recette (RECETTE.md)
 deploiement/    Surcouche Docker de production et configuration Caddy (TLS)
@@ -53,7 +53,8 @@ Les choix techniques et les hypothèses sont décrits dans [docs/ARCHITECTURE.md
    - `TELEGRAM_BOT_TOKEN` et `TELEGRAM_BOT_USERNAME` : voir [Créer le bot avec BotFather](#créer-le-bot-avec-botfather) ;
    - `AUTH_SECRET` et `HASH_SALT` : générer chaque valeur avec `openssl rand -base64 32` ;
    - `ADMIN_EMAIL` et `ADMIN_PASSWORD` : premier compte du back-office (12 caractères minimum) ;
-   - `GEMINI_API_KEY` : facultative (voir plus bas).
+   - `ANTHROPIC_API_KEY` : clé de l'API Claude, pour tout le raisonnement (voir plus bas) ;
+   - `GEMINI_API_KEY` : facultative, pour l'audio seulement (voir plus bas).
 
 3. Lancer l'ensemble :
 
@@ -69,7 +70,11 @@ Les choix techniques et les hypothèses sont décrits dans [docs/ARCHITECTURE.md
    - ouvrir le back-office : http://localhost:3000/admin, avec `ADMIN_EMAIL` et `ADMIN_PASSWORD`. À la première connexion, scanner le QR code avec une application TOTP (Google Authenticator, Aegis...). Le code est ensuite demandé à chaque connexion.
    - vérifier la santé du bot : http://localhost:8080/health
 
-**Sans clé Gemini**, le bot fonctionne en mode dégradé. Les compétences sont repérées par mots-clés et les pistes sont marquées « à explorer ». Un message vocal reçoit une demande d'écrire la réponse, et il n'y a pas de réponse audio. C'est utile pour une démonstration ou pendant une panne prolongée. Pour le mode complet, créer une clé sur https://aistudio.google.com et la mettre dans `GEMINI_API_KEY`.
+**Intelligence artificielle** : Claude (Anthropic) fait tout le raisonnement. Il repère les compétences dans le bilan et le CV, interprète les corrections et choisit les pistes. Créer une clé sur https://console.anthropic.com et la mettre dans `ANTHROPIC_API_KEY`. Le modèle par défaut est Claude Opus 5.5 (`CLAUDE_MODEL`), avec une réflexion courte (`CLAUDE_EFFORT=low`) pour répondre vite.
+
+Claude ne lit pas l'audio et ne parle pas. Les vocaux et les réponses audio passent donc par Gemini (Google), seulement si `GEMINI_API_KEY` est fournie (clé sur https://aistudio.google.com). Sans cette clé, le bot demande au jeune d'écrire sa réponse, et l'option audio de `/parametres` est retirée.
+
+**Sans clé Claude**, le bot fonctionne en mode dégradé. Les compétences sont repérées par mots-clés et les pistes sont marquées « à explorer ». C'est utile pour une démonstration ou pendant une panne prolongée.
 
 ## Créer le bot avec BotFather
 
@@ -205,23 +210,26 @@ Exemple pour un VPS Linux (Ubuntu 24.04, 2 Go de RAM) avec deux sous-domaines.
 
 ## Variables d'environnement
 
-| Variable                        | Obligatoire          | Rôle                                                                        |
-| ------------------------------- | -------------------- | --------------------------------------------------------------------------- |
-| `TELEGRAM_BOT_TOKEN`            | oui                  | Jeton du bot donné par BotFather                                            |
-| `TELEGRAM_WEBHOOK_SECRET`       | en webhook           | Jeton secret vérifié sur chaque appel du webhook                            |
-| `TELEGRAM_BOT_USERNAME`         | oui                  | Nom du bot, pour le lien t.me et le QR code                                 |
-| `BOT_MODE`                      | non                  | `polling` (par défaut) ou `webhook`                                         |
-| `BOT_PUBLIC_URL`                | en webhook           | URL publique HTTPS du bot                                                   |
-| `GEMINI_API_KEY`                | non                  | Clé de l'API Gemini ; sans clé, mode dégradé sans IA                        |
-| `GEMINI_MODEL`                  | non                  | Modèle Gemini (audio, PDF, JSON structuré). Par défaut : `gemini-3.8-flash` |
-| `GEMINI_TTS_MODEL`              | non                  | Modèle de synthèse vocale. Par défaut : `gemini-3.8-flash-tts`              |
-| `DATABASE_URL`                  | oui                  | Connexion PostgreSQL (remplacée dans Docker)                                |
-| `POSTGRES_PASSWORD`             | oui en production    | Mot de passe du PostgreSQL de Docker                                        |
-| `APP_URL`                       | oui                  | URL publique du site (liens magiques, page de confidentialité)              |
-| `AUTH_SECRET`                   | oui                  | Secret Auth.js ; sert aussi à chiffrer les secrets TOTP                     |
-| `HASH_SALT`                     | oui                  | Sel secret du hachage des identifiants pour les analyses                    |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | au premier lancement | Premier administrateur, créé par le seed                                    |
-| `DOMAINE_WEB`, `DOMAINE_BOT`    | en production        | Domaines servis par Caddy                                                   |
+| Variable                        | Obligatoire          | Rôle                                                                                       |
+| ------------------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN`            | oui                  | Jeton du bot donné par BotFather                                                           |
+| `TELEGRAM_WEBHOOK_SECRET`       | en webhook           | Jeton secret vérifié sur chaque appel du webhook                                           |
+| `TELEGRAM_BOT_USERNAME`         | oui                  | Nom du bot, pour le lien t.me et le QR code                                                |
+| `BOT_MODE`                      | non                  | `polling` (par défaut) ou `webhook`                                                        |
+| `BOT_PUBLIC_URL`                | en webhook           | URL publique HTTPS du bot                                                                  |
+| `ANTHROPIC_API_KEY`             | non                  | Clé de l'API Claude (raisonnement) ; sans clé, mode dégradé sans IA                        |
+| `CLAUDE_MODEL`                  | non                  | Modèle Claude. Par défaut : `claude-opus-5-5`                                              |
+| `CLAUDE_EFFORT`                 | non                  | Profondeur de réflexion de Claude (`low` à `max`). Par défaut : `low`                      |
+| `GEMINI_API_KEY`                | non                  | Clé de l'API Gemini, pour l'audio seulement ; sans clé, pas de vocaux ni de réponses audio |
+| `GEMINI_MODEL`                  | non                  | Modèle Gemini qui transcrit les vocaux. Par défaut : `gemini-3.8-flash`                    |
+| `GEMINI_TTS_MODEL`              | non                  | Modèle de synthèse vocale. Par défaut : `gemini-3.8-flash-tts`                             |
+| `DATABASE_URL`                  | oui                  | Connexion PostgreSQL (remplacée dans Docker)                                               |
+| `POSTGRES_PASSWORD`             | oui en production    | Mot de passe du PostgreSQL de Docker                                                       |
+| `APP_URL`                       | oui                  | URL publique du site (liens magiques, page de confidentialité)                             |
+| `AUTH_SECRET`                   | oui                  | Secret Auth.js ; sert aussi à chiffrer les secrets TOTP                                    |
+| `HASH_SALT`                     | oui                  | Sel secret du hachage des identifiants pour les analyses                                   |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | au premier lancement | Premier administrateur, créé par le seed                                                   |
+| `DOMAINE_WEB`, `DOMAINE_BOT`    | en production        | Domaines servis par Caddy                                                                  |
 
 Les secrets ne sont lus que dans l'environnement, jamais dans le code.
 
@@ -229,12 +237,13 @@ Les secrets ne sont lus que dans l'environnement, jamais dans le code.
 
 - **Seed de démonstration** : toutes les fiches sont à vérifier. Le site de l'AnpE Bénin (anpe.bj) n'a pas pu être consulté lors de la préparation. Les conditions du CQM et du CQP, ainsi que le portail d'inscription de l'ANPE Togo, restent à confirmer.
 - **Pseudonymisation** : elle retire les e-mails, liens, numéros, adresses et les noms introduits par une formule (« je m'appelle », « chez », « mon patron », civilités), ainsi que le prénom du profil. Un nom propre cité sans contexte peut passer. C'est une pseudonymisation, pas une anonymisation complète.
-- **Audio et CV** : un vocal ou un CV est envoyé tel quel à Gemini, car un fichier ne peut pas être pseudonymisé avant l'appel. Le prompt interdit de recopier les données d'identité. Sentya n'écrit jamais le fichier sur disque ni en base, mais Telegram en garde une copie sur ses serveurs, selon ses propres règles.
+- **Audio et CV** : un vocal est envoyé tel quel à Gemini, et un CV tel quel à Claude, car un fichier ne peut pas être pseudonymisé avant l'appel. Les prompts interdisent de recopier les données d'identité. Sentya n'écrit jamais le fichier sur disque ni en base, mais Telegram en garde une copie sur ses serveurs, selon ses propres règles.
 - **Données sensibles (RG-08)** : le filtre retire toute phrase qui contient un mot lié à la santé, à la religion, à l'origine ou à la politique. Il peut retirer une phrase utile (« j'ai travaillé pour une église »). Ce choix est volontaire : mieux vaut perdre une phrase que garder une donnée sensible.
-- **Mode sans IA** : sans clé Gemini, les pistes viennent du seul classement par compétences et sont marquées « à explorer ». Les vocaux ne sont pas transcrits.
+- **Mode sans IA** : sans clé Claude, les pistes viennent du seul classement par compétences et sont marquées « à explorer ». Sans clé Gemini, les vocaux ne sont pas transcrits : le bot demande d'écrire.
+- **Refus de Claude** : si Claude décline une requête pour raison de sécurité, l'API la relance d'elle-même sur un modèle de repli (`fallbacks: "default"`). Si tout est décliné, le repli déterministe de Sentya prend le relais.
 - **Une seule instance du bot** : la limitation du débit (20 messages par minute) et le verrou par jeune sont en mémoire. Pour plusieurs instances, il faudra les déplacer en base.
 - **Rappels** : ils partent entre 8 h et 20 h, heure du Bénin et du Togo (UTC+1). Un rappel prévu la nuit part le lendemain matin.
-- **Modèles Gemini** : les noms de modèles évoluent. Vérifier `GEMINI_MODEL` et `GEMINI_TTS_MODEL` sur la page des modèles de Google avant un déploiement.
+- **Noms des modèles** : ils évoluent. Vérifier `CLAUDE_MODEL`, `GEMINI_MODEL` et `GEMINI_TTS_MODEL` sur les pages des modèles d'Anthropic et de Google avant un déploiement.
 - **Poids de la page d'accueil** : 181 Ko transférés (compression gzip), 482 Ko non compressés pour un navigateur moderne. Le total non compressé atteint 593 Ko si l'on compte le polyfill que Next.js ne sert qu'aux très anciens navigateurs.
 - **Double authentification** : un code TOTP reste valable pendant sa fenêtre de 30 secondes et peut y être réutilisé (pas de mémorisation du dernier code utilisé).
 - **Adresse IP des visiteurs** : la limitation des tentatives de connexion et le journal des accès lisent l'en-tête `X-Forwarded-For`. Il n'est fiable que derrière Caddy, comme dans la configuration de production.

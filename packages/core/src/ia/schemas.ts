@@ -1,5 +1,5 @@
 // Schémas zod de toutes les sorties de l'IA. Chaque sortie est validée avant usage ;
-// le même schéma est converti en JSON Schema et transmis à Gemini (sortie structurée).
+// le même schéma sert de format de sortie structurée à Claude, et à Gemini en JSON Schema.
 import { z } from "zod";
 
 export const VOIES = ["EMPLOI", "FORMATION_CERTIFICATION", "AUTO_EMPLOI"] as const;
@@ -57,7 +57,7 @@ export const schemaTranscription = z.object({
 export type SortieTranscription = z.infer<typeof schemaTranscription>;
 
 /**
- * Convertit un schéma zod en JSON Schema accepté par Gemini (responseJsonSchema).
+ * Convertit un schéma zod en JSON Schema accepté par Gemini (responseJsonSchema, audio).
  * On retire la clé "$schema", inutile pour l'API.
  */
 export function versJsonSchema(schema: z.ZodType): Record<string, unknown> {

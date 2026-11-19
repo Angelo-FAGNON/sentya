@@ -1,4 +1,4 @@
-// Pseudonymisation appliquée à tout texte avant un appel à Gemini.
+// Pseudonymisation appliquée à tout texte avant un appel à l'IA (Claude ou Gemini).
 // Retire : e-mails, liens, numéros de téléphone et identifiants, adresses, noms de personnes.
 //
 // Limite connue : un nom propre cité sans contexte ("j'ai aidé Koffi") n'est pas détecté,
