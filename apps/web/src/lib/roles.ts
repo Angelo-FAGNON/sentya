@@ -18,7 +18,15 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 const MATRICE: Record<Role, readonly Permission[]> = {
-  ADMIN: ["tableau", "referentiel", "signalements", "revue", "partenaires", "utilisateurs", "journal"],
+  ADMIN: [
+    "tableau",
+    "referentiel",
+    "signalements",
+    "revue",
+    "partenaires",
+    "utilisateurs",
+    "journal",
+  ],
   CURATEUR: ["tableau", "referentiel", "signalements", "revue"],
   PARTENAIRE: ["espace_partenaire"],
 };

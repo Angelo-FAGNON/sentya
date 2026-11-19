@@ -31,8 +31,8 @@ export default async function DoubleAuthentification() {
         <h1 className="text-2xl font-bold">Double authentification</h1>
         {session.totpRequis ? (
           <p className="mt-4">
-            La double authentification est déjà active sur ce compte. Reconnecte-toi avec ton code
-            à 6 chiffres.
+            La double authentification est déjà active sur ce compte. Reconnecte-toi avec ton code à
+            6 chiffres.
           </p>
         ) : (
           <p className="mt-4">
@@ -81,7 +81,8 @@ export default async function DoubleAuthentification() {
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       <p className="mt-4">
-        Clé à saisir à la main : <code className="break-all font-mono text-lg">{secretLisible}</code>
+        Clé à saisir à la main :{" "}
+        <code className="break-all font-mono text-lg">{secretLisible}</code>
       </p>
       <div className="mt-6">
         <Formulaire action={confirmerTotp} libelleBouton="Activer la double authentification">

@@ -8,6 +8,7 @@ import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { env } from "@/env";
 import { dechiffrer } from "@/lib/chiffrement";
+import { journalWeb } from "@/lib/contexte";
 import { ipDepuisEntetes } from "@/lib/ip";
 import { ACTEUR_INCONNU, journaliser } from "@/lib/journal-acces";
 import { LimiteurEchecs, limiteurConnexion } from "@/lib/limiteur";
@@ -60,7 +61,12 @@ async function connecterAdmin(brut: unknown, requete: Request): Promise<User | n
     where: { id: compte.id },
     data: { derniereConnexion: new Date() },
   });
-  await journaliser(acteur, totpRequis ? "connexion_reussie:sans_totp" : "connexion_reussie", null, ip);
+  await journaliser(
+    acteur,
+    totpRequis ? "connexion_reussie:sans_totp" : "connexion_reussie",
+    null,
+    ip,
+  );
   return { id: compte.id, email: compte.email, role: compte.role, partenaireId: null, totpRequis };
 }
 
@@ -68,7 +74,12 @@ async function connecterPartenaire(brut: unknown, requete: Request): Promise<Use
   const ip = ipDepuisEntetes(requete.headers);
   const saisie = schemaConnexionPartenaire.safeParse(brut);
   if (!saisie.success) {
-    await journaliser({ type: "PARTENAIRE", id: ACTEUR_INCONNU }, "connexion_echec:saisie", null, ip);
+    await journaliser(
+      { type: "PARTENAIRE", id: ACTEUR_INCONNU },
+      "connexion_echec:saisie",
+      null,
+      ip,
+    );
     return null;
   }
   const { email, motDePasse } = saisie.data;
@@ -106,6 +117,16 @@ async function connecterPartenaire(brut: unknown, requete: Request): Promise<Use
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  // Un refus de connexion est déjà tracé dans le journal des accès : inutile de l'afficher en erreur.
+  logger: {
+    error(erreur) {
+      if (erreur.name === "CredentialsSignin") return;
+      journalWeb().error({ err: erreur }, "erreur Auth.js");
+    },
+    warn(code) {
+      journalWeb().warn({ code }, "avertissement Auth.js");
+    },
+  },
   providers: [
     Credentials({
       id: "admin",

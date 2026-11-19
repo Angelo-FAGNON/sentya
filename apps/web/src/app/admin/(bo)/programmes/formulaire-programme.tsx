@@ -17,7 +17,13 @@ export function FormulaireProgramme({
   return (
     <Formulaire action={action} libelleBouton={programme ? "Enregistrer" : "Créer le programme"}>
       <Champ nom="nom" libelle="Nom du programme" valeur={programme?.nom} requis />
-      <ZoneTexte nom="conditions" libelle="Conditions" valeur={programme?.conditions} requis lignes={3} />
+      <ZoneTexte
+        nom="conditions"
+        libelle="Conditions"
+        valeur={programme?.conditions}
+        requis
+        lignes={3}
+      />
       <Champ nom="contact" libelle="Contact" valeur={programme?.contact} requis />
       <ZoneTexte
         nom="publicCible"

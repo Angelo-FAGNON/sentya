@@ -23,7 +23,13 @@ export function ChampsFiche({
     <fieldset className="space-y-4 rounded border border-slate-300 p-4">
       <legend className="px-1 font-bold">Source et vérification</legend>
       {avecPays ? (
-        <Liste nom="pays" libelle="Pays" options={OPTIONS_PAYS} valeur={valeurs?.pays ?? "BJ"} requis />
+        <Liste
+          nom="pays"
+          libelle="Pays"
+          options={OPTIONS_PAYS}
+          valeur={valeurs?.pays ?? "BJ"}
+          requis
+        />
       ) : null}
       <Champ
         nom="sourceUrl"
@@ -41,7 +47,13 @@ export function ChampsFiche({
           valeur={versChampDate(valeurs?.verifieLe)}
         />
       ) : null}
-      <Liste nom="statut" libelle="Statut" options={statuts} valeur={valeurs?.statut ?? "A_VERIFIER"} requis />
+      <Liste
+        nom="statut"
+        libelle="Statut"
+        options={statuts}
+        valeur={valeurs?.statut ?? "A_VERIFIER"}
+        requis
+      />
       <CaseACocher
         nom="verifieeAujourdhui"
         libelle="Je viens de vérifier cette fiche à la source"
@@ -63,7 +75,11 @@ export function ZoneSuppression({
     <details className="mt-10 rounded border border-red-300 p-4">
       <summary className="cursor-pointer font-semibold text-red-800">Supprimer cette fiche</summary>
       <p className="my-3">{avertissement}</p>
-      <BoutonAction action={action} libelle="Oui, supprimer définitivement" variante="bouton-danger" />
+      <BoutonAction
+        action={action}
+        libelle="Oui, supprimer définitivement"
+        variante="bouton-danger"
+      />
     </details>
   );
 }

@@ -94,7 +94,9 @@ export const caseACocher = z
   .optional()
   .transform((v) => v === "on" || v === "true");
 
-const ouiNon = z.enum(["oui", "non"], { error: "Choisis oui ou non." }).transform((v) => v === "oui");
+const ouiNon = z
+  .enum(["oui", "non"], { error: "Choisis oui ou non." })
+  .transform((v) => v === "oui");
 
 const entierOptionnel = (min: number, max: number) =>
   z
@@ -270,6 +272,7 @@ export const schemaOpportuniteCurateur = schemaOpportunitePartenaire.extend({
   partenaireId: idOptionnel,
   /** Statut souhaité. VERIFIEE passe toujours par la vérification du noyau (RG-05). */
   statut: statut.optional().default("BROUILLON"),
+  verifieeAujourdhui: caseACocher,
 });
 
 export const schemaModeleEtape = z.object({

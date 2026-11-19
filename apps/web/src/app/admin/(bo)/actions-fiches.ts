@@ -75,7 +75,11 @@ export async function marquerVerifiee(
     if (erreur instanceof OffreRefuseeError) return echec(messageRefus(erreur.analyse));
     throw erreur;
   }
-  await journaliser({ type: "ADMIN", id: admin.id }, "fiche.verifier", `${NOMS_RESSOURCE[entite]}:${id}`);
+  await journaliser(
+    { type: "ADMIN", id: admin.id },
+    "fiche.verifier",
+    `${NOMS_RESSOURCE[entite]}:${id}`,
+  );
   revalidatePath("/admin", "layout");
   return succes("Fiche marquée comme vérifiée aujourd'hui.");
 }
@@ -120,7 +124,11 @@ export async function supprimerFiche(
     }
     throw erreur;
   }
-  await journaliser({ type: "ADMIN", id: admin.id }, "fiche.supprimer", `${NOMS_RESSOURCE[entite]}:${id}`);
+  await journaliser(
+    { type: "ADMIN", id: admin.id },
+    "fiche.supprimer",
+    `${NOMS_RESSOURCE[entite]}:${id}`,
+  );
   revalidatePath("/admin", "layout");
   redirect(`${CHEMINS[entite]}?ok=supprime`);
 }

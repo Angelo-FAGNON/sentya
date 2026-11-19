@@ -178,7 +178,8 @@ export const monPlan = {
   titre: "Mon plan",
   intro: "Ce lien ne marche qu'une seule fois. Ouvre-le quand tu es prêt.",
   bouton: "Voir mon plan",
-  expire: "Ce lien a déjà servi ou a expiré. Tape /monplan dans Telegram pour en recevoir un nouveau.",
+  expire:
+    "Ce lien a déjà servi ou a expiré. Tape /monplan dans Telegram pour en recevoir un nouveau.",
   sansPlan: "Tu n'as pas encore de plan actif. Retourne dans Telegram pour en créer un.",
   rappel: "Pour revoir ton plan plus tard, tape /monplan dans Telegram.",
 };

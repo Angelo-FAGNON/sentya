@@ -23,7 +23,9 @@ const STYLE_STATUT: Record<Statut, string> = {
 
 export function BadgeStatut({ statut }: { statut: Statut }) {
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-sm font-semibold ${STYLE_STATUT[statut]}`}>
+    <span
+      className={`inline-block rounded px-2 py-0.5 text-sm font-semibold ${STYLE_STATUT[statut]}`}
+    >
       {LIBELLE_STATUT[statut]}
     </span>
   );
@@ -126,7 +128,9 @@ export function parametre(valeur: string | string[] | undefined): string | undef
 }
 
 export function filtrePays(valeur: string | undefined) {
-  return (PAYS as readonly string[]).includes(valeur ?? "") ? (valeur as (typeof PAYS)[number]) : undefined;
+  return (PAYS as readonly string[]).includes(valeur ?? "")
+    ? (valeur as (typeof PAYS)[number])
+    : undefined;
 }
 
 export function filtreStatut(valeur: string | undefined) {

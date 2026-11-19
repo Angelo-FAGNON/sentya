@@ -29,16 +29,10 @@ export async function exigerAdmin(permission: Permission): Promise<AdminConnecte
         })
       : null;
   const decision = deciderAccesAdmin(session, compte, permission);
-  switch (decision.type) {
-    case "connexion":
-      redirect("/admin/connexion");
-    case "double_authentification":
-      redirect("/admin/2fa");
-    case "refuse":
-      redirect("/admin/acces-refuse");
-    case "autorise":
-      return { id: compte!.id, email: compte!.email, role: decision.role };
-  }
+  if (decision.type === "connexion" || !compte) redirect("/admin/connexion");
+  if (decision.type === "double_authentification") redirect("/admin/2fa");
+  if (decision.type === "refuse") redirect("/admin/acces-refuse");
+  return { id: compte.id, email: compte.email, role: decision.role };
 }
 
 /** Pour la page d'enrôlement : compte actif connecté, avec ou sans code TOTP. */

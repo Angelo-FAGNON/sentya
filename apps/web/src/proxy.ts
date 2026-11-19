@@ -54,7 +54,9 @@ function traiter(requete: NextRequest, session: InfosSession | null): Response {
 }
 
 // La session n'est lue que dans les zones privées : les pages publiques ne posent aucun cookie.
-const traiterAvecSession = auth((requete) => traiter(requete, lireSessionBrute(requete.auth?.user)));
+const traiterAvecSession = auth((requete) =>
+  traiter(requete, lireSessionBrute(requete.auth?.user)),
+);
 
 export default function proxy(requete: NextRequest) {
   if (estZonePrivee(requete.nextUrl.pathname)) {

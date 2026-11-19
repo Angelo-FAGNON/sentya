@@ -21,7 +21,11 @@ import { marquerVerifiee } from "../actions-fiches";
 
 export const metadata: Metadata = { title: "Programmes" };
 
-export default async function ListeProgrammes({ searchParams }: { searchParams: ParametresRecherche }) {
+export default async function ListeProgrammes({
+  searchParams,
+}: {
+  searchParams: ParametresRecherche;
+}) {
   await exigerAdmin("referentiel");
   const params = await searchParams;
   const pays = filtrePays(parametre(params.pays));
@@ -50,7 +54,9 @@ export default async function ListeProgrammes({ searchParams }: { searchParams: 
       ) : (
         <div className="overflow-x-auto">
           <table className="tableau">
-            <caption className="sr-only">Liste des programmes. Les fiches à vérifier sont surlignées.</caption>
+            <caption className="sr-only">
+              Liste des programmes. Les fiches à vérifier sont surlignées.
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Nom</th>

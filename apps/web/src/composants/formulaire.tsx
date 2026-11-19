@@ -114,7 +114,15 @@ function AideEtErreur({
   );
 }
 
-function Etiquette({ htmlFor, libelle, requis }: { htmlFor: string; libelle: string; requis?: boolean }) {
+function Etiquette({
+  htmlFor,
+  libelle,
+  requis,
+}: {
+  htmlFor: string;
+  libelle: string;
+  requis?: boolean;
+}) {
   return (
     <label htmlFor={htmlFor} className="block font-semibold">
       {libelle}

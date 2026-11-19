@@ -23,7 +23,7 @@ export type EnvWeb = z.infer<typeof schemaEnv>;
 let enCache: EnvWeb | undefined;
 
 /** Valide l'environnement et lève une erreur lisible qui liste chaque variable fautive. */
-export function validerEnv(source: NodeJS.ProcessEnv = process.env): EnvWeb {
+export function validerEnv(source: Record<string, string | undefined> = process.env): EnvWeb {
   const resultat = schemaEnv.safeParse(source);
   if (!resultat.success) {
     const details = resultat.error.issues.map((i) => `- ${i.path.join(".")} : ${i.message}`);

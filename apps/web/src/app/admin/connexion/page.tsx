@@ -19,7 +19,11 @@ export default async function ConnexionAdmin({
         </p>
       ) : null}
       <div className="mt-6">
-        <Formulaire action={connecterAdmin} libelleBouton="Se connecter" libelleEnCours="Connexion...">
+        <Formulaire
+          action={connecterAdmin}
+          libelleBouton="Se connecter"
+          libelleEnCours="Connexion..."
+        >
           <Champ nom="email" libelle="E-mail" type="email" requis autoComplete="username" />
           <Champ
             nom="motDePasse"

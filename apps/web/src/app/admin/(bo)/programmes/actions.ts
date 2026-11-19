@@ -22,9 +22,16 @@ export async function creerProgramme(
   if (!saisie.success) return echecValidation(saisie.error);
   const { verifieeAujourdhui, statut, verifieLe, ...champs } = saisie.data;
   const programme = await getPrisma().programme.create({
-    data: { ...champs, ...statutEtVerification({ statut, verifieLe, verifieeAujourdhui }, new Date()) },
+    data: {
+      ...champs,
+      ...statutEtVerification({ statut, verifieLe, verifieeAujourdhui }, new Date()),
+    },
   });
-  await journaliser({ type: "ADMIN", id: admin.id }, "programme.creer", `Programme:${programme.id}`);
+  await journaliser(
+    { type: "ADMIN", id: admin.id },
+    "programme.creer",
+    `Programme:${programme.id}`,
+  );
   revalidatePath("/admin", "layout");
   redirect(`/admin/programmes/${programme.id}?ok=cree`);
 }
@@ -40,7 +47,10 @@ export async function modifierProgramme(
   const { verifieeAujourdhui, statut, verifieLe, ...champs } = saisie.data;
   await getPrisma().programme.update({
     where: { id },
-    data: { ...champs, ...statutEtVerification({ statut, verifieLe, verifieeAujourdhui }, new Date()) },
+    data: {
+      ...champs,
+      ...statutEtVerification({ statut, verifieLe, verifieeAujourdhui }, new Date()),
+    },
   });
   await journaliser({ type: "ADMIN", id: admin.id }, "programme.modifier", `Programme:${id}`);
   revalidatePath("/admin", "layout");

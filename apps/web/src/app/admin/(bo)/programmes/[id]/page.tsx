@@ -46,7 +46,11 @@ export default async function ModifierProgramme({
         Statut : <BadgeStatut statut={programme.statut} />. Vérifiée le :{" "}
         <DateVerification date={programme.verifieLe} />.
       </p>
-      <FormulaireProgramme action={modifierProgramme.bind(null, programme.id)} programme={programme} />
+      <FormulaireProgramme
+        key={programme.updatedAt.toISOString()}
+        action={modifierProgramme.bind(null, programme.id)}
+        programme={programme}
+      />
       <ZoneSuppression
         action={supprimerFiche.bind(null, "programme", programme.id)}
         avertissement="Les plans déjà créés gardent leur copie des informations. Cette action est définitive."
