@@ -17,6 +17,7 @@ import { messageRefus } from "@/lib/fiche";
 import { exigerAdmin } from "@/lib/garde";
 import { journaliser } from "@/lib/journal-acces";
 import { lireFormulaire, schemaOpportuniteCurateur } from "@/lib/schemas";
+import { aDesSignalementsEnAttente, MESSAGE_SIGNALEMENTS_EN_ATTENTE } from "@/lib/signalements";
 
 /** Le métier et le partenaire choisis doivent exister et être du pays de l'offre. */
 async function verifierLiens(saisie: {
@@ -88,6 +89,12 @@ export async function modifierOpportunite(
   const prisma = getPrisma();
   const actuelle = await prisma.opportunite.findUnique({ where: { id } });
   if (!actuelle) return echec("Opportunité introuvable.");
+
+  // RG-06 : tant que des signalements attendent une décision, seul le statut Suspendue est permis.
+  const changeDeStatut = verifieeAujourdhui || statut !== actuelle.statut;
+  if (changeDeStatut && statut !== "SUSPENDUE" && (await aDesSignalementsEnAttente(id))) {
+    return echec(MESSAGE_SIGNALEMENTS_EN_ATTENTE, { statut: "Signalements à traiter d'abord." });
+  }
 
   // Le texte modifié est analysé à nouveau : une offre qui demande des frais est refusée.
   const analyse = await analyserOffre(prisma, contenu);

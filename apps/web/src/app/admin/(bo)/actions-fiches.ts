@@ -10,6 +10,7 @@ import { echec, succes, type EtatFormulaire } from "@/lib/etat-formulaire";
 import { estErreurReference, messageRefus } from "@/lib/fiche";
 import { exigerAdmin } from "@/lib/garde";
 import { journaliser } from "@/lib/journal-acces";
+import { aDesSignalementsEnAttente, MESSAGE_SIGNALEMENTS_EN_ATTENTE } from "@/lib/signalements";
 
 export type EntiteFiche =
   | "metier"
@@ -65,6 +66,8 @@ export async function marquerVerifiee(
         await prisma.modeleEtape.update({ where: { id }, data: donnees });
         break;
       case "opportunite":
+        // RG-06 : une offre signalée passe d'abord par la file des signalements.
+        if (await aDesSignalementsEnAttente(id)) return echec(MESSAGE_SIGNALEMENTS_EN_ATTENTE);
         // RG-05 : le noyau refait l'analyse de fraude et refuse une offre qui demande des frais.
         await verifierOpportunite(contexteWeb(), id);
         break;

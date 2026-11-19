@@ -38,10 +38,12 @@ describe("origine des requêtes POST", () => {
 });
 
 describe("adresse IP", () => {
-  it("prend la première adresse transmise par le proxy inverse", () => {
-    expect(ipDepuisEntetes(new Headers({ "x-forwarded-for": "41.1.2.3, 10.0.0.1" }))).toBe(
+  it("prend la dernière adresse, ajoutée par le proxy inverse le plus proche", () => {
+    // La première adresse peut être inventée par le client.
+    expect(ipDepuisEntetes(new Headers({ "x-forwarded-for": "6.6.6.6, 41.1.2.3" }))).toBe(
       "41.1.2.3",
     );
+    expect(ipDepuisEntetes(new Headers({ "x-forwarded-for": "41.1.2.3" }))).toBe("41.1.2.3");
     expect(ipDepuisEntetes(new Headers({ "x-real-ip": "41.9.9.9" }))).toBe("41.9.9.9");
     expect(ipDepuisEntetes(new Headers())).toBe("inconnue");
   });
