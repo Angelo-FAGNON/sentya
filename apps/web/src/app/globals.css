@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* Police système uniquement : aucune police web à télécharger (3G). */
+@theme {
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+html {
+  /* Taille en rem : le texte suit le réglage du navigateur. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-white font-sans text-base leading-relaxed text-slate-900;
+}
+
+/* Focus toujours visible, contraste fort, pour la navigation au clavier. */
+:focus-visible {
+  outline: 0.1875rem solid #1d4ed8;
+  outline-offset: 0.125rem;
+}
+
+a {
+  @apply text-blue-800 underline underline-offset-2;
+}
+
+a:hover {
+  @apply text-blue-950;
+}
+
+/* Lien d'évitement : caché jusqu'à ce qu'il reçoive le focus. */
+.lien-evitement {
+  @apply absolute left-2 -top-40 z-50 rounded bg-slate-900 px-4 py-2 text-white no-underline;
+}
+
+.lien-evitement:focus {
+  @apply top-2 text-white;
+}
+
+/* Champs de formulaire du back-office et de l'espace partenaire. */
+.champ {
+  @apply mt-1 block w-full rounded border border-slate-500 bg-white px-3 py-2 text-base text-slate-900;
+}
+
+.champ[aria-invalid="true"] {
+  @apply border-red-700;
+}
+
+.bouton {
+  @apply inline-flex items-center justify-center rounded bg-emerald-800 px-4 py-2 font-semibold text-white no-underline hover:bg-emerald-900 disabled:opacity-60;
+}
+
+.bouton:hover {
+  @apply text-white;
+}
+
+.bouton-secondaire {
+  @apply inline-flex items-center justify-center rounded border border-slate-600 bg-white px-4 py-2 font-semibold text-slate-900 no-underline hover:bg-slate-100;
+}
+
+.bouton-danger {
+  @apply inline-flex items-center justify-center rounded bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800;
+}
+
+.tableau {
+  @apply w-full border-collapse text-left text-sm;
+}
+
+.tableau th,
+.tableau td {
+  @apply border-b border-slate-300 px-2 py-2 align-top;
+}
+
+.tableau th {
+  @apply bg-slate-100 font-semibold;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
