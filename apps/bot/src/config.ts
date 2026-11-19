@@ -1,4 +1,5 @@
 // Configuration du bot, validée au démarrage. Les secrets viennent uniquement de l'environnement.
+import { sansValeursVides } from "@sentya/core";
 import { z } from "zod";
 
 const schema = z
@@ -40,7 +41,7 @@ const schema = z
 export type ConfigBot = z.infer<typeof schema>;
 
 export function lireConfigBot(env: NodeJS.ProcessEnv = process.env): ConfigBot {
-  const resultat = schema.safeParse(env);
+  const resultat = schema.safeParse(sansValeursVides(env));
   if (!resultat.success) {
     const details = resultat.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`);
     throw new Error(`Configuration du bot invalide.\n${details.join("\n")}`);

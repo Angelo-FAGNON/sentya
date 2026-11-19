@@ -1,6 +1,9 @@
 # Surcouche de production (VPS) : TLS automatique avec Caddy, bot en mode webhook.
 # Usage : docker compose -f docker-compose.yml -f deploiement/docker-compose.prod.yml up -d --build
 services:
+  postgres:
+    ports: !reset []
+
   bot:
     environment:
       BOT_MODE: webhook

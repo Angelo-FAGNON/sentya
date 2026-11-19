@@ -50,7 +50,9 @@ const radical = (mot: string) => mot.slice(0, Math.max(4, Math.ceil(mot.length *
 
 /** Mots-outils ignorés dans les synonymes ; les sigles courts ("bts", "cap") restent significatifs. */
 const MOTS_OUTILS = new Set(
-  "les des une aux pour par sur dans avec mon mes ton tes son ses nous vous ils elles qui que quoi pas plus tres bien fait faire suis est".split(" "),
+  "les des une aux pour par sur dans avec mon mes ton tes son ses nous vous ils elles qui que quoi pas plus tres bien fait faire suis est".split(
+    " ",
+  ),
 );
 
 /** Questions dont la réponse ne décrit pas un savoir-faire : exclues du repli par mots-clés. */

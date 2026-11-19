@@ -1,5 +1,6 @@
 // Prompt système : reformulation en français simple d'un texte issu de la base.
-// La sortie est contrôlée en code : aucun nombre, lien ou contact absent de la source n'est accepté.
+// La sortie est contrôlée en code (orientation/reformulation.ts) : aucun nombre, lien ou
+// e-mail absent de la source n'est accepté.
 
 export const PROMPT_REFORMULATION = {
   id: "reformulation",

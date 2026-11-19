@@ -33,6 +33,7 @@ export * from "./orientation/pistes";
 export * from "./orientation/plan";
 export * from "./orientation/preselection";
 export * from "./orientation/profil";
+export * from "./orientation/reformulation";
 
 export * from "./regles/anonymisation";
 export * from "./regles/candidature";

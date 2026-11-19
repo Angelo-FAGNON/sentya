@@ -115,6 +115,6 @@ describe("messages du bot", () => {
 
   it("ne pose qu'une seule question par message de question", () => {
     for (const q of QUESTIONS_BILAN)
-      expect((q.texte.match(/\?/g) ?? []).length).toBeLessThanOrEqual(2);
+      expect((q.texte.match(/\?/g) ?? []).length, q.texte).toBeLessThanOrEqual(1);
   });
 });

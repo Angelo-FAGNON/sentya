@@ -91,7 +91,7 @@ export const fr = {
     aime: "Qu'est-ce que tu aimes le plus faire ?",
     ville: "Tu vis dans quelle ville ?",
     etudes: "Quel est ton niveau d'études ? Écris ta réponse ou appuie sur le bouton.",
-    objectif: "Que veux-tu en priorité ? Tu ne sais pas encore ? Écris-le simplement.",
+    objectif: "Que veux-tu en priorité ? Si tu ne sais pas encore, écris-le simplement.",
   },
   reprise: "Bon retour ! On reprend là où on s'était arrêtés.",
   ecouteVocal: "J'écoute ton vocal...",

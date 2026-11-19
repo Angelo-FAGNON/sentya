@@ -1,6 +1,6 @@
 # Sentya : architecture du MVP
 
-Document du Lot 1. Il fixe les hypothèses, les choix techniques, l'arborescence cible et le modèle de données.
+Ce document fixe les hypothèses, les choix techniques, l'arborescence et le modèle de données.
 
 ## 1. Hypothèses retenues
 
@@ -39,89 +39,87 @@ Document du Lot 1. Il fixe les hypothèses, les choix techniques, l'arborescence
 | Journaux             | pino (JSON), sans donnée d'identité                                                            | Exigé.                                                                                                                                                                                                                                                                                                                                                                                    |
 | Tests                | Vitest. Test de bout en bout avec de fausses mises à jour Telegram et un faux Gemini           | Exigé. La base de test est un vrai PostgreSQL (service Docker), pour tester les cascades et les contraintes.                                                                                                                                                                                                                                                                              |
 
-## 3. Arborescence cible
-
-Les fichiers marqués (L1) existent après le Lot 1. Les autres arrivent dans le lot indiqué.
+## 3. Arborescence
 
 ```
 sentya/
-  package.json                      (L1) scripts racine, pnpm 10
-  pnpm-workspace.yaml               (L1)
-  tsconfig.base.json                (L1)
-  eslint.config.mjs                 (L1)
-  .prettierrc.json, .editorconfig   (L1)
-  .env.example                      (L1, complété au L5)
-  docker-compose.yml                (L5) postgres, migrate, bot, web
-  README.md                         (L5)
+  package.json, pnpm-workspace.yaml   monorepo pnpm 10, scripts racine
+  tsconfig.base.json                  TypeScript strict
+  eslint.config.mjs, .prettierrc.json ESLint et Prettier
+  .env.example                        toutes les variables, commentées
+  Dockerfile                          cibles outils (migrations, seed), bot, web
+  docker-compose.yml                  postgres, migrations, bot, web
+  deploiement/
+    docker-compose.prod.yml           surcouche de production (Caddy, webhook)
+    Caddyfile                         TLS automatique, proxy inverse
   docs/
-    ARCHITECTURE.md                 (L1) ce document
-    RECETTE.md                      (L5) checklist de recette manuelle
+    ARCHITECTURE.md                   ce document
+    RECETTE.md                        checklist de recette manuelle
   scripts/
-    check-conventions.mjs           (L1) refuse tiret cadratin et emoji
+    check-conventions.mjs             refuse tiret cadratin et emoji
   packages/
-    db/                             (L1)
-      prisma.config.ts
-      prisma/schema.prisma
-      prisma/migrations/
-      prisma/seed.ts                (L5)
-      prisma/seed-data/             (L5) compétences, métiers BJ et TG, programmes
-      src/index.ts                  client Prisma partagé
-    core/                           (L2)
+    db/
+      prisma.config.ts                configuration Prisma 7
+      prisma/schema.prisma            27 tables
+      prisma/migrations/              migration initiale
+      prisma/seed.ts                  seed idempotent, contrôles avant écriture
+      prisma/seed-data/               compétences, métiers, programmes, formations,
+                                      modèles d'étapes, règles de fraude, sources vérifiées
+      src/index.ts                    client Prisma partagé (adaptateur pg)
+    core/
       src/
-        messages/fr.ts              tous les textes du bot
-        prompts/
-          extraction-competences.v1.ts
-          choix-pistes.v1.ts
-          reformulation.v1.ts
-          transcription.v1.ts
-        canal/canal.ts              interface Canal (Telegram, puis WhatsApp)
+        config.ts, contexte.ts        configuration et dépendances injectées
+        horloge.ts, dates.ts          horloge simulable, dates à UTC+1
+        journal.ts, texte.ts          pino sans identité, normalisation du texte
+        messages/fr.ts                tous les textes du bot
+        canal/canal.ts                interface Canal (Telegram, puis WhatsApp)
+        prompts/                      prompts versionnés : extraction-competences,
+                                      correction-competences, choix-pistes,
+                                      reformulation, transcription
         ia/
-          gemini.ts                 client, nouvel essai, repli, indisponibilité
-          schemas.ts                schémas zod des sorties de l'IA
+          fournisseur.ts              interface et erreurs (indisponible, invalide)
+          appel-structure.ts          JSON validé par zod, un nouvel essai, puis repli
+          gemini.ts                   client @google/genai (JSON, audio, PDF, TTS)
+          sans-ia.ts                  mode dégradé sans clé
+          factice.ts                  IA factice pour les tests
+          schemas.ts                  schémas zod des sorties
         confidentialite/
-          pseudonymisation.ts       retire noms, numéros, adresses, e-mails
-          donnees-sensibles.ts      filtre RG-08
-          hachage.ts                HMAC des identifiants
+          pseudonymisation.ts         retire noms, numéros, adresses, e-mails
+          donnees-sensibles.ts        filtre RG-08
+          hachage.ts                  HMAC des identifiants, jetons
         orientation/
-          preselection.ts           étape 1 : jusqu'à 15 métiers, sans IA
-          pistes.ts                 étapes 2 et 3 : choix IA puis ancrage
-          competences.ts            extraction et rapprochement au référentiel
-          plan.ts                   plan en 3 étapes depuis la base
+          bilan.ts                    questions et réponses (EF-02)
+          competences.ts              extraction, repli par mots-clés, correction
+          preselection.ts             étape 1 : jusqu'à 15 métiers, sans IA
+          pistes.ts                   étapes 2 et 3 : choix IA, ancrage, journal
+          fiche.ts, plan.ts           fiche piste, plan en 3 étapes, statuts
+          profil.ts, reformulation.ts normalisation, reformulation contrôlée
+        regles/                       consentement, eligibilite, sources, fraude,
+                                      peremption, rappels, candidature,
+                                      lien-magique, suppression, anonymisation
         parcours/
-          etats.ts                  machine à états du bilan et du parcours
-          moteur.ts                 traitement d'un message entrant
-        regles/
-          consentement.ts           RG-01, RG-02
-          fraude.ts                 RG-05, RG-06, EF-10
-          peremption.ts             RG-04
-          suppression.ts            RG-11
-          anonymisation.ts          RG-12
-          candidature.ts            RG-07
-        analytique/evenements.ts
-        journal.ts                  pino
-      test/                         RG-01 à RG-12, pseudonymisation, IA, ancrage, égalité
+          moteur.ts                   machine à états du parcours (tous les écrans)
+          rappels.ts                  envoi d'un rappel J+3, J+7, J+30
+          actions.ts, envoi.ts        actions des boutons, envoi et audio
+          types.ts                    état persistant, dépendances, planificateur
+        analytique/                   événements et indicateurs du tableau de bord
+        qualite/revue.ts              échantillon hebdomadaire de revue
+      test/unitaires/                 tests sans base
+      test/integration/               tests sur PostgreSQL réel (RG-01 à RG-12)
   apps/
-    bot/                            (L3)
+    bot/
       src/
-        index.ts                    démarrage en polling ou en webhook
-        serveur.ts                  node:http, secret du webhook, /health
-        telegram-canal.ts           implémentation de Canal
-        middlewares/                idempotence, limitation de débit, journal
-        commandes/                  /start /plan /changer /recommencer /monplan
-                                    /parametres /supprimer
-        taches/                     rappels, nouvel essai Gemini, tâches quotidiennes
-        pdf/plan-pdf.ts
-      test/parcours.e2e.test.ts     parcours complet simulé
-      Dockerfile
-    web/                            (L4)
-      src/app/
-        (public)/                   accueil, confidentialité, conditions, suppression
-        monplan/[jeton]/            lien magique
-        admin/                      connexion, 2FA, CRUD, signalements, revue, indicateurs
-        partenaire/                 inscription, opportunités, candidatures
-        api/health/
-      src/auth.ts                   Auth.js
-      Dockerfile
+        index.ts                      démarrage : polling ou webhook
+        bot.ts                        grammY : idempotence, débit, verrou, moteur
+        conversion.ts                 mise à jour Telegram vers message du noyau
+        telegram-canal.ts             implémentation de Canal
+        serveur.ts                    node:http : /health et webhook (jeton secret)
+        middlewares/                  idempotence, limite-debit, verrou
+        taches/taches.ts              pg-boss : rappels, reprise IA, tâches planifiées
+        pdf/plan-pdf.ts               PDF du plan (pdfkit)
+        audio.ts                      PCM vers OGG/Opus (ffmpeg)
+      test/                           parcours complet simulé, serveur, configuration
+    web/                              site public, back-office, espace partenaire
 ```
 
 ## 4. Flux principaux
