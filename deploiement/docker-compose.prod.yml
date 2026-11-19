@@ -1,0 +1,33 @@
+# Surcouche de production (VPS) : TLS automatique avec Caddy, bot en mode webhook.
+# Usage : docker compose -f docker-compose.yml -f deploiement/docker-compose.prod.yml up -d --build
+services:
+  bot:
+    environment:
+      BOT_MODE: webhook
+      BOT_PUBLIC_URL: https://${DOMAINE_BOT}
+    ports: !reset []
+
+  web:
+    environment:
+      APP_URL: https://${DOMAINE_WEB}
+      AUTH_URL: https://${DOMAINE_WEB}
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAINE_WEB: ${DOMAINE_WEB}
+      DOMAINE_BOT: ${DOMAINE_BOT}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploiement/Caddyfile:/etc/caddy/Caddyfile:ro
+      - donnees-caddy:/data
+    depends_on:
+      - web
+      - bot
+
+volumes:
+  donnees-caddy:

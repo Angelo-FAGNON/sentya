@@ -3,6 +3,7 @@ import { PgBoss } from "pg-boss";
 import {
   creerJournal,
   FournisseurGemini,
+  FournisseurSansIA,
   horlogeSysteme,
   lireConfig,
   type Contexte,
@@ -21,14 +22,19 @@ async function demarrer() {
   const configBot = lireConfigBot();
   const config = lireConfig();
   const prisma = getPrisma();
+  if (!config.GEMINI_API_KEY) {
+    journal.warn("GEMINI_API_KEY absente : mode sans IA (replis deterministes uniquement)");
+  }
 
   const ctx: Contexte = {
     prisma,
-    ia: new FournisseurGemini({
-      apiKey: config.GEMINI_API_KEY,
-      modele: config.GEMINI_MODEL,
-      modeleVoix: config.GEMINI_TTS_MODEL,
-    }),
+    ia: config.GEMINI_API_KEY
+      ? new FournisseurGemini({
+          apiKey: config.GEMINI_API_KEY,
+          modele: config.GEMINI_MODEL,
+          modeleVoix: config.GEMINI_TTS_MODEL,
+        })
+      : new FournisseurSansIA(),
     horloge: horlogeSysteme,
     journal,
     sel: config.HASH_SALT,

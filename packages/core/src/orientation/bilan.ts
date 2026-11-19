@@ -140,6 +140,7 @@ export async function reponsesDuBilan(ctx: Contexte, userId: string) {
   const parQuestion = new Map<string, string>();
   for (const r of reponses) parQuestion.set(r.question, r.texte);
   return QUESTIONS_BILAN.filter((q) => parQuestion.has(q.cle)).map((q) => ({
+    cle: q.cle,
     question: q.texte,
     texte: parQuestion.get(q.cle) ?? "",
   }));

@@ -3,7 +3,11 @@
 import { z } from "zod";
 
 const schemaConfig = z.object({
-  GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY est manquante."),
+  /** Facultative : sans clé, le bot fonctionne en mode dégradé, sans IA (FournisseurSansIA). */
+  GEMINI_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim() : undefined)),
   GEMINI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
   GEMINI_TTS_MODEL: z.string().min(1).default("gemini-3.8-flash-tts"),
   HASH_SALT: z.string().min(16, "HASH_SALT doit faire au moins 16 caractères."),

@@ -1,0 +1,65 @@
+# Lancement local complet : docker compose up --build
+# Ordre : postgres, puis migrations et seed, puis bot et web.
+name: sentya
+
+x-env-commun: &env-commun
+  DATABASE_URL: postgresql://sentya:${POSTGRES_PASSWORD:-sentya}@postgres:5432/sentya
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sentya
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentya}
+      POSTGRES_DB: sentya
+    volumes:
+      - donnees-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentya -d sentya"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrations:
+    build:
+      context: .
+      target: outils
+    env_file: .env
+    environment:
+      <<: *env-commun
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  bot:
+    build:
+      context: .
+      target: bot
+    env_file: .env
+    environment:
+      <<: *env-commun
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${BOT_PORT:-8080}:8080"
+
+  web:
+    build:
+      context: .
+      target: web
+    env_file: .env
+    environment:
+      <<: *env-commun
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  donnees-postgres:

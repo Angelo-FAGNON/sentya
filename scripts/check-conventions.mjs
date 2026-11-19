@@ -14,6 +14,7 @@ const DOSSIERS_IGNORES = new Set([
   "generated",
   ".git",
   ".turbo",
+  ".claude",
 ]);
 
 const EXTENSIONS = new Set([

@@ -1,0 +1,11 @@
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.tsbuildinfo
+packages/db/src/generated
+.git
+.env
+.env.*
+!.env.example
+.claude

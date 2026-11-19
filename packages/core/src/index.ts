@@ -17,6 +17,7 @@ export * from "./ia/appel-structure";
 export * from "./ia/factice";
 export * from "./ia/fournisseur";
 export * from "./ia/gemini";
+export * from "./ia/sans-ia";
 export * from "./ia/schemas";
 
 export * from "./prompts/choix-pistes.v1";

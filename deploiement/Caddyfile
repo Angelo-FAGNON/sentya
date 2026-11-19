@@ -1,0 +1,16 @@
+# Proxy inverse avec certificats TLS automatiques (Let's Encrypt).
+{$DOMAINE_WEB} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+{$DOMAINE_BOT} {
+	# Seuls le webhook Telegram et la sonde de santé sont exposés.
+	@autorise path /telegram/webhook /health
+	handle @autorise {
+		reverse_proxy bot:8080
+	}
+	handle {
+		respond 404
+	}
+}

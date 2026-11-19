@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/coverage/**",
       "packages/db/src/generated/**",
+      ".claude/**",
     ],
   },
   js.configs.recommended,

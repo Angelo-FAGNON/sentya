@@ -45,25 +45,28 @@ export async function chargerReferentiel(prisma: ClientBase): Promise<Competence
   });
 }
 
-const RADICAL = 4;
-const radical = (mot: string) => mot.slice(0, RADICAL);
+/** Radical d'un mot : 60 % de sa longueur, au moins 4 lettres (tolère pluriels et conjugaisons). */
+const radical = (mot: string) => mot.slice(0, Math.max(4, Math.ceil(mot.length * 0.6)));
+
+/** Mots-outils ignorés dans les synonymes ; les sigles courts ("bts", "cap") restent significatifs. */
+const MOTS_OUTILS = new Set(
+  "les des une aux pour par sur dans avec mon mes ton tes son ses nous vous ils elles qui que quoi pas plus tres bien fait faire suis est".split(" "),
+);
+
+/** Questions dont la réponse ne décrit pas un savoir-faire : exclues du repli par mots-clés. */
+export const QUESTIONS_HORS_COMPETENCES = new Set(["ville", "etudes", "objectif"]);
 
 /**
  * Repli sans IA : une compétence est repérée si son libellé ou un synonyme apparaît
- * dans le texte, ou si tous les mots significatifs d'un synonyme y apparaissent
- * (comparaison sur les 4 premières lettres, pour tolérer pluriels et conjugaisons).
+ * dans le texte, ou si chaque mot significatif d'un synonyme (3 lettres ou plus) a son
+ * radical au début d'un mot du texte ("vendre" reconnaît "je vends").
  */
 export function correspondanceDeterministe(
   texte: string,
   referentiel: CompetenceReferentiel[],
 ): string[] {
   const n = normaliser(texte);
-  const radicauxTexte = new Set(
-    n
-      .split(/[^\p{L}\p{N}]+/u)
-      .filter(Boolean)
-      .map(radical),
-  );
+  const motsTexte = n.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   const trouvees: string[] = [];
   for (const competence of referentiel) {
     const expressions = [competence.libelle, ...competence.synonymes];
@@ -71,8 +74,11 @@ export function correspondanceDeterministe(
       if (contientTerme(n, expression)) return true;
       const motsUtiles = normaliser(expression)
         .split(/[^\p{L}\p{N}]+/u)
-        .filter((m) => m.length >= 4);
-      return motsUtiles.length > 0 && motsUtiles.every((m) => radicauxTexte.has(radical(m)));
+        .filter((m) => m.length >= 3 && !MOTS_OUTILS.has(m));
+      return (
+        motsUtiles.length > 0 &&
+        motsUtiles.every((m) => motsTexte.some((t) => t.startsWith(radical(m))))
+      );
     });
     if (trouve) trouvees.push(competence.id);
   }
@@ -95,7 +101,8 @@ export function filtrerIdentifiants(
 }
 
 export interface EntreeExtractionBilan {
-  reponses: { question: string; texte: string }[];
+  /** "cle" identifie la question (ex. "activites") pour le repli par mots-clés. */
+  reponses: { question: string; texte: string; cle?: string }[];
   /** Noms à retirer avant l'envoi à l'IA (prénom, nom Telegram). */
   nomsConnus?: (string | null | undefined)[];
   /** CV en PDF ou en image (EF-04). */
@@ -129,7 +136,11 @@ export async function extraireCompetences(
     ctx.journal,
   );
 
-  const texteComplet = reponses.map((r) => r.texte).join(". ");
+  // Le repli ne lit que les réponses qui décrivent des savoir-faire.
+  const texteComplet = entree.reponses
+    .filter((r) => !r.cle || !QUESTIONS_HORS_COMPETENCES.has(r.cle))
+    .map((r) => pseudonymiser(r.texte, { nomsConnus: entree.nomsConnus }))
+    .join(". ");
   if (!resultat.ok) {
     return {
       competenceIds: entree.cv ? [] : correspondanceDeterministe(texteComplet, referentiel),
