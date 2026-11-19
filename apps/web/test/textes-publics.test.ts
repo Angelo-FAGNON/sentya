@@ -5,6 +5,7 @@ import {
   accueil,
   conditions,
   confidentialite,
+  conversationExemple,
   monPlan,
   PROMESSE,
   suppression,
@@ -17,7 +18,7 @@ function tousLesTextes(): string[] {
     else if (Array.isArray(valeur)) valeur.forEach(parcourir);
     else if (valeur && typeof valeur === "object") Object.values(valeur).forEach(parcourir);
   };
-  parcourir([accueil, conditions, confidentialite, suppression, monPlan]);
+  parcourir([accueil, conversationExemple, conditions, confidentialite, suppression, monPlan]);
   return textes;
 }
 
@@ -27,6 +28,12 @@ describe("textes des pages publiques", () => {
       .flatMap((t) => decouperPhrases(t))
       .filter((phrase) => compterMots(phrase) > 15);
     expect(tropLongues).toEqual([]);
+  });
+
+  it("WhatsApp n'est jamais présenté comme déjà disponible", () => {
+    const mentions = tousLesTextes().filter((t) => t.includes("WhatsApp"));
+    expect(mentions.length).toBeGreaterThan(0);
+    for (const texte of mentions) expect(texte).toMatch(/[Bb]ientôt|arrive bientôt/);
   });
 
   it("la promesse imposée est reprise mot pour mot", () => {

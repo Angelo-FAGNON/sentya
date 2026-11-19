@@ -1,10 +1,15 @@
-// Page d'accueil : la promesse, les 3 étapes, le bouton Telegram et le code QR.
-// Aucune image lourde : le code QR est un SVG généré côté serveur.
+// Page d'accueil : la promesse, l'exemple de conversation, les 3 étapes, la confiance,
+// le code QR et les questions. Aucune image : le code QR est un SVG généré côté serveur.
 import QRCode from "qrcode";
 import { CadrePublic } from "@/composants/cadre-public";
+import { ConversationExemple } from "@/composants/conversation-exemple";
+import { Icone, type NomIcone } from "@/composants/icones";
 import { env } from "@/env";
 import { lienTelegram } from "@/lib/telegram";
-import { accueil, PROMESSE } from "@/lib/textes-publics";
+import { accueil, conversationExemple, PROMESSE } from "@/lib/textes-publics";
+
+const ICONES_ETAPES: NomIcone[] = ["micro", "source", "cloche"];
+const ICONES_GARANTIES: NomIcone[] = ["personne", "verifie", "cadenas", "alerte"];
 
 export default async function Accueil() {
   const { TELEGRAM_BOT_USERNAME } = env();
@@ -14,59 +19,145 @@ export default async function Accueil() {
     type: "svg",
     margin: 1,
     errorCorrectionLevel: "M",
-    color: { dark: "#0f172a", light: "#ffffff" },
+    color: { dark: "#0b1733", light: "#ffffff" },
   });
 
   return (
-    <CadrePublic>
-      <h1 className="text-3xl font-bold leading-tight sm:text-4xl">{accueil.titre}</h1>
-      <p className="mt-4 text-xl">{PROMESSE}</p>
-
-      <section aria-labelledby="titre-etapes" className="mt-10">
-        <h2 id="titre-etapes" className="text-2xl font-semibold">
-          Comment ça marche
-        </h2>
-        <ol className="mt-4 grid gap-4 sm:grid-cols-3">
-          {accueil.etapes.map((etape, index) => (
-            <li key={etape.nom} className="rounded border border-slate-300 p-4">
-              <p className="text-lg font-bold text-emerald-900">
-                {index + 1}. {etape.nom}
-              </p>
-              <p className="mt-2">{etape.texte}</p>
-            </li>
-          ))}
-        </ol>
+    <CadrePublic pleineLargeur>
+      <section className="heros" aria-labelledby="titre">
+        <div className="conteneur heros-grille">
+          <div className="heros-texte">
+            <h1 id="titre">
+              {accueil.titre.avant} <span className="surligne">{accueil.titre.surligne}</span>
+              {accueil.titre.apres}
+            </h1>
+            <p className="promesse">{PROMESSE}</p>
+            <div className="action">
+              <div className="boutons">
+                <a className="cta" href={lienBouton} rel="noopener">
+                  <Icone nom="avion" />
+                  {accueil.bouton}
+                </a>
+                <span className="bientot">
+                  <Icone nom="horloge" />
+                  {accueil.bientotWhatsapp}
+                </span>
+              </div>
+              <ul className="faits" aria-label="En bref">
+                {accueil.faits.map((fait) => (
+                  <li key={fait}>
+                    <Icone nom="coche" />
+                    {fait}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <ConversationExemple messages={conversationExemple} textes={accueil.exemple} />
+        </div>
       </section>
 
-      <section aria-labelledby="titre-gratuit" className="mt-10">
-        <h2 id="titre-gratuit" className="text-2xl font-semibold">
-          C&apos;est gratuit
-        </h2>
-        <p className="mt-2">{accueil.gratuit}</p>
-        <p className="mt-2">{accueil.pays}</p>
+      <section className="section" aria-labelledby="titre-etapes">
+        <div className="conteneur marche">
+          <div className="intro">
+            <h2 id="titre-etapes">{accueil.etapesTitre}</h2>
+            <p className="chapeau">{accueil.etapesChapeau}</p>
+          </div>
+          <ol className="chemin">
+            {accueil.etapes.map((etape, index) => (
+              <li key={etape.nom} className="etape">
+                <span className="pastille" aria-hidden="true">
+                  {index + 1}
+                </span>
+                <div>
+                  <h3>{etape.nom}</h3>
+                  <p>{etape.texte}</p>
+                  <span className="detail">
+                    <Icone nom={ICONES_ETAPES[index] ?? "coche"} />
+                    {etape.detail}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
-      <p className="mt-8">
-        <a href={lienBouton} className="bouton px-6 py-3 text-lg" rel="noopener">
-          {accueil.bouton}
-        </a>
-      </p>
+      <section className="confiance" aria-labelledby="titre-gratuit">
+        <div className="conteneur">
+          <h2 id="titre-gratuit">{accueil.gratuitTitre}</h2>
+          <p className="gros">{accueil.gratuit}</p>
+          <ul className="garanties">
+            {accueil.garanties.map((garantie, index) => (
+              <li key={garantie.titre}>
+                <Icone nom={ICONES_GARANTIES[index] ?? "coche"} />
+                <div>
+                  <strong>{garantie.titre}</strong>
+                  <p>{garantie.texte}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-      <section aria-labelledby="titre-qr" className="mt-10">
-        <h2 id="titre-qr" className="text-xl font-semibold">
-          {accueil.qrTitre}
-        </h2>
-        <figure className="mt-4">
-          <div
-            role="img"
-            aria-label="Code QR pour ouvrir Sentya dans Telegram"
-            className="h-48 w-48 [&>svg]:h-full [&>svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: svgQr }}
-          />
-          <figcaption className="mt-2 text-sm">
-            {accueil.qrAlternative} <a href={lienQr}>{lienQr}</a>.
-          </figcaption>
-        </figure>
+      <section className="section" aria-labelledby="titre-qr">
+        <div className="conteneur">
+          <figure className="qr-bloc">
+            <div className="qr-cadre">
+              <div
+                role="img"
+                aria-label="Code QR pour ouvrir Sentya dans Telegram"
+                dangerouslySetInnerHTML={{ __html: svgQr }}
+              />
+            </div>
+            <div>
+              <h2 id="titre-qr">{accueil.qrTitre}</h2>
+              <figcaption>
+                {accueil.qrAlternative} <a href={lienQr}>{lienQr}</a>.
+              </figcaption>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <section className="section section-serree" aria-labelledby="titre-questions">
+        <div className="conteneur faq">
+          <div>
+            <h2 id="titre-questions">{accueil.questionsTitre}</h2>
+            <p className="chapeau">{accueil.questionsChapeau}</p>
+          </div>
+          <div className="questions">
+            {accueil.questions.map((q, index) => (
+              <details key={q.question}>
+                <summary>
+                  {q.question}
+                  <Icone nom="plus" />
+                </summary>
+                <p>
+                  {q.reponse}
+                  {index === accueil.questions.length - 1 ? (
+                    <>
+                      {" "}
+                      <a href="/suppression">{accueil.enSavoirPlus}</a>.
+                    </>
+                  ) : null}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="final" aria-labelledby="titre-final">
+        <div className="conteneur">
+          <h2 id="titre-final">{accueil.finalTitre}</h2>
+          <p>{accueil.finalTexte}</p>
+          <a className="cta" href={lienBouton} rel="noopener">
+            <Icone nom="avion" />
+            {accueil.bouton}
+          </a>
+        </div>
       </section>
     </CadrePublic>
   );

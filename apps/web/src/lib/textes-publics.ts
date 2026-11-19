@@ -10,28 +10,139 @@ export interface Section {
 export const PROMESSE =
   "En moins de 15 minutes, passe de « je ne sais pas quoi faire » à un plan en 3 étapes vérifiées.";
 
+// Sentya est un service d'orientation, pas un bot : la messagerie n'est que le canal.
+// Telegram aujourd'hui, WhatsApp plus tard. Ne jamais présenter WhatsApp comme disponible.
 export const accueil = {
-  titre: "Sentya, ton conseiller d'orientation sur Telegram",
+  /** Titre en trois parties : la partie du milieu est surlignée. */
+  titre: {
+    avant: "Sentya, ton",
+    surligne: "conseiller d'orientation",
+    apres: ", dans ta messagerie",
+  },
+  bouton: "Commencer sur Telegram",
+  boutonCourt: "Commencer",
+  bientotWhatsapp: "Bientôt sur WhatsApp",
+  canaux: "Sur Telegram, bientôt WhatsApp",
+  faits: ["Gratuit", "18 ans et plus", "Bénin et Togo"],
+  navigation: [
+    { ancre: "titre-etapes", libelle: "Comment ça marche" },
+    { ancre: "titre-gratuit", libelle: "C'est gratuit" },
+    { ancre: "titre-questions", libelle: "Questions" },
+  ],
+  exemple: {
+    entete: "sur Telegram",
+    legende: "Exemple de conversation. Tes pistes dépendent de tes réponses.",
+    rejouer: "Revoir l'exemple",
+    saisie: "Message",
+  },
+  etapesTitre: "Comment ça marche",
+  etapesChapeau: "Tout se passe dans ta messagerie. Aujourd'hui sur Telegram, bientôt sur WhatsApp.",
   etapes: [
     {
       nom: "Raconter",
       texte: "Tu racontes ce que tu sais faire. Par écrit ou en vocal.",
+      detail: "6 questions simples",
     },
     {
       nom: "Choisir",
       texte: "Sentya te propose 3 pistes de métiers. Tu choisis celle qui te plaît.",
+      detail: "Pistes expliquées et sourcées",
     },
     {
       nom: "Avancer",
       texte: "Tu reçois un plan en 3 étapes vérifiées. Sentya te relance pour avancer.",
+      detail: "Rappels après 3, 7 et 30 jours",
     },
   ],
+  gratuitTitre: "C'est gratuit",
   gratuit: "C'est gratuit. Aucun paiement ne te sera jamais demandé.",
   pays: "Pour les jeunes de 18 ans et plus, au Bénin et au Togo.",
-  bouton: "Ouvrir Sentya sur Telegram",
+  garanties: [
+    { titre: "Pour toi, si tu as 18 ans", texte: "Pour les jeunes de 18 ans et plus, au Bénin et au Togo." },
+    {
+      titre: "Des infos vérifiées",
+      texte: "Chaque information pratique montre sa source et sa date de vérification.",
+    },
+    {
+      titre: "Tes données t'appartiennent",
+      texte: "Rien n'est gardé avant ton accord. La commande /supprimer efface tout.",
+    },
+    {
+      titre: "Attention aux arnaques",
+      texte: "Une offre te demande de l'argent ? C'est sûrement une arnaque. Signale-la.",
+    },
+  ],
   qrTitre: "Sur ordinateur ? Scanne ce code avec ton téléphone.",
   qrAlternative: "Code QR qui ouvre Sentya dans Telegram. Tu peux aussi utiliser le lien",
+  questionsTitre: "Tes questions",
+  questionsChapeau: "Les réponses courtes aux questions qu'on nous pose souvent.",
+  questions: [
+    {
+      question: "C'est vraiment gratuit ?",
+      reponse: "Oui. Sentya ne te demandera jamais d'argent. Personne ne doit t'en demander en son nom.",
+    },
+    {
+      question: "Il me faut un CV ?",
+      reponse: "Non. Si tu en as un, envoie-le en PDF ou en photo. Sinon, continue sans.",
+    },
+    {
+      question: "Sentya me trouve un emploi ?",
+      reponse:
+        "Sentya ne promet pas d'emploi. Il te propose des pistes et un plan. La décision t'appartient toujours.",
+    },
+    {
+      question: "Comment effacer mes données ?",
+      reponse: "Tape /supprimer dans Telegram. Tout est effacé tout de suite.",
+    },
+  ],
+  enSavoirPlus: "En savoir plus",
+  finalTitre: "Ta première question t'attend.",
+  finalTexte: "Ouvre Sentya sur Telegram et appuie sur Démarrer. WhatsApp arrive bientôt.",
 };
+
+/**
+ * Conversation d'exemple de la page d'accueil. Les textes du bot reprennent ceux de
+ * @sentya/core (messages/fr.ts) et les métiers viennent du seed. Données de démonstration.
+ */
+export const conversationExemple: {
+  de: "bot" | "moi";
+  texte: string;
+  heure: string;
+  touches?: { libelle: string; appuye?: boolean }[];
+  colonnes?: 1 | 2;
+}[] = [
+  {
+    de: "bot",
+    texte:
+      "Raconte-moi ce que tu fais ou as déjà fait. Travail, apprentissage, famille, commerce, études : tout compte.",
+    heure: "10:02",
+  },
+  {
+    de: "moi",
+    texte: "Je répare les téléphones de mes amis. J'aide aussi mon oncle à sa boutique.",
+    heure: "10:03",
+  },
+  {
+    de: "bot",
+    texte: "J'ai repéré ces compétences :\n- Réparation de téléphones\n- Accueil des clients\nC'est juste ?",
+    heure: "10:03",
+    touches: [{ libelle: "Oui", appuye: true }, { libelle: "Corriger" }],
+    colonnes: 2,
+  },
+  { de: "moi", texte: "Oui", heure: "10:03" },
+  {
+    de: "bot",
+    texte:
+      "Voici 3 pistes pour toi. Ce sont des suggestions : c'est toi qui décides.\n1. Réparateur ou réparatrice de téléphones\n2. Vendeur ou vendeuse\n3. Installateur ou installatrice solaire",
+    heure: "10:04",
+    touches: [
+      { libelle: "Voir la piste 1" },
+      { libelle: "Voir la piste 2" },
+      { libelle: "Voir la piste 3" },
+    ],
+    colonnes: 1,
+  },
+];
 
 export const confidentialite: { titre: string; intro: string; sections: Section[] } = {
   titre: "Politique de confidentialité",
