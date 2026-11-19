@@ -9,12 +9,9 @@ import { appelerAvecSchema } from "../ia/appel-structure";
 import { IAIndisponibleError } from "../ia/fournisseur";
 import { schemaChoixPistes, type SortieChoixPistes } from "../ia/schemas";
 import { fr } from "../messages/fr";
-import {
-  construireEntreeChoixPistes,
-  PROMPT_CHOIX_PISTES,
-  type EntreeChoixPistes,
-} from "../prompts/choix-pistes.v1";
-import { normaliser } from "../texte";
+import { construireEntreeChoixPistes, type EntreeChoixPistes } from "../prompts/choix-pistes.v1";
+import { PROMPT_CHOIX_PISTES } from "../prompts/choix-pistes.v2";
+import { compterMots, normaliser } from "../texte";
 import type { Activite } from "./competences";
 import { libellesCompetences } from "./competences";
 import { chargerMetiersEligibles, preselectionner, type Candidat } from "./preselection";
@@ -40,6 +37,10 @@ export interface ResultatValidation {
  * Garde-fou contre l'invention : refuse un texte de l'IA qui contient un prix, un lien,
  * un contact, un grand nombre ou une promesse de résultat (RG-09).
  */
+/** Longueurs maximales acceptées (le prompt demande 20 et 15 mots ; petite tolérance). */
+export const MOTS_MAX_RAISON = 22;
+export const MOTS_MAX_CONDITION = 17;
+
 export function texteIASur(texte: string): boolean {
   const n = normaliser(texte);
   const interdits = [
@@ -102,10 +103,15 @@ export function validerEtCompleterPistes(
     pistes.push({
       metierId: proposee.metierId,
       voie,
-      raison: texteIASur(proposee.raison) ? proposee.raison.trim() : repli.raison,
-      conditionPrincipale: texteIASur(proposee.conditionPrincipale)
-        ? proposee.conditionPrincipale.trim()
-        : fr.conditionRepli(candidat.metier.premieresEtapes[voie]),
+      raison:
+        texteIASur(proposee.raison) && compterMots(proposee.raison) <= MOTS_MAX_RAISON
+          ? proposee.raison.trim()
+          : repli.raison,
+      conditionPrincipale:
+        texteIASur(proposee.conditionPrincipale) &&
+        compterMots(proposee.conditionPrincipale) <= MOTS_MAX_CONDITION
+          ? proposee.conditionPrincipale.trim()
+          : fr.conditionRepli(candidat.metier.premieresEtapes[voie]),
       aExplorer: false,
     });
   }

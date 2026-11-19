@@ -23,6 +23,7 @@ export * from "./ia/sans-ia";
 export * from "./ia/schemas";
 
 export * from "./prompts/choix-pistes.v1";
+export * from "./prompts/choix-pistes.v2";
 export * from "./prompts/correction-competences.v1";
 export * from "./prompts/extraction-competences.v1";
 export * from "./prompts/reformulation.v1";

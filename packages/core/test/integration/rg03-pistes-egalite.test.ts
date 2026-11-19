@@ -64,7 +64,7 @@ describe("RG-03 : pistes ancrées sur le référentiel", () => {
 
     const log = await prisma.recommandationLog.findFirstOrThrow();
     expect(log.idsRejetes).toEqual(["bj-astronaute", "tg-couture"]);
-    expect(log.promptVersion).toBe("choix-pistes@1");
+    expect(log.promptVersion).toBe("choix-pistes@2");
     expect(log.metierIdsProposes).toEqual(pistes.map((p) => p.metierId));
     expect(JSON.stringify(log)).not.toContain("Afi");
   });

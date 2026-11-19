@@ -91,3 +91,34 @@ describe("texteIASur", () => {
     expect(texteIASur(texte)).toBe(false);
   });
 });
+
+describe("longueur des textes de l'IA", () => {
+  it("remplace une raison ou une condition trop longue par le texte de repli", () => {
+    const longue =
+      "Tu as cousu pendant de longues années dans un atelier familial très animé avec beaucoup de clients exigeants chaque jour de la semaine entière.";
+    const r = validerEtCompleterPistes(
+      {
+        pistes: [
+          { ...piste("bj-couture"), raison: longue, conditionPrincipale: `${longue} Encore.` },
+        ],
+      },
+      candidats,
+      libelles,
+    );
+    expect(r.pistes[0]?.raison).not.toBe(longue);
+    expect(r.pistes[0]?.raison).toContain("couture");
+    expect(r.pistes[0]?.conditionPrincipale).toMatch(/^Commence par/);
+    expect(r.pistes[0]?.aExplorer).toBe(false);
+  });
+
+  it("garde une raison de 20 mots", () => {
+    const raison =
+      "Tu couds depuis quatre ans chez ta tante, tu prends les mesures et tu fais les ourlets toi-même.";
+    const r = validerEtCompleterPistes(
+      { pistes: [{ ...piste("bj-couture"), raison }] },
+      candidats,
+      libelles,
+    );
+    expect(r.pistes[0]?.raison).toBe(raison);
+  });
+});

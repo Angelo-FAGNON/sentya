@@ -2,7 +2,8 @@
 // L'IA ne voit ni prénom ni texte libre : seulement des données structurées et neutres,
 // ce qui garantit l'égalité de traitement (deux profils identiques donnent la même entrée).
 
-export const PROMPT_CHOIX_PISTES = {
+/** Version 1, conservée pour expliquer les recommandations passées. Remplacée par la v2. */
+export const PROMPT_CHOIX_PISTES_V1 = {
   id: "choix-pistes",
   version: "choix-pistes@1",
   systeme: `Tu aides un jeune du Bénin ou du Togo à choisir 3 pistes professionnelles réalistes.
