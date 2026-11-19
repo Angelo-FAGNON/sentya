@@ -2,9 +2,9 @@
 // - Compétences, métiers (Bénin et Togo), programmes publics, formations, modèles d'étapes,
 //   règles de fraude et compte administrateur.
 // - Aucune opportunité : elles doivent être vérifiées par un curateur (hypothèse H2).
-// - Idempotent : chaque écriture est un upsert sur un identifiant stable. Une nouvelle
-//   exécution met à jour les textes mais conserve le statut et la date de vérification
-//   posés par un curateur.
+// - Idempotent et non destructif : chaque écriture est un upsert sur un identifiant stable,
+//   en création seulement. Une nouvelle exécution (chaque docker compose up) ne modifie
+//   jamais une fiche existante : le travail des curateurs et l'administrateur sont conservés.
 // Lancement : pnpm exec prisma db seed (voir prisma.config.ts).
 import argon2 from "argon2";
 import { creerClientPrisma } from "../src/index";
@@ -245,7 +245,7 @@ async function seederCompetences(prisma: Client): Promise<void> {
     await prisma.competence.upsert({
       where: { id: c.id },
       create: { id: c.id, ...donnees },
-      update: donnees,
+      update: {},
     });
   }
 }
@@ -263,13 +263,13 @@ async function seederMetiers(prisma: Client): Promise<number> {
     await prisma.metier.upsert({
       where: { id: m.id },
       create: { id: m.id, ...donnees, statut: STATUT_SEED, verifieLe: null },
-      update: donnees,
+      update: {},
     });
     for (const [competenceId, poids] of m.competences) {
       await prisma.metierCompetence.upsert({
         where: { metierId_competenceId: { metierId: m.id, competenceId } },
         create: { metierId: m.id, competenceId, poids },
-        update: { poids },
+        update: {},
       });
       liens += 1;
     }
@@ -292,7 +292,7 @@ async function seederProgrammes(prisma: Client): Promise<void> {
     await prisma.programme.upsert({
       where: { id: p.id },
       create: { id: p.id, ...donnees, statut: STATUT_SEED, verifieLe: null },
-      update: donnees,
+      update: {},
     });
   }
 }
@@ -311,7 +311,7 @@ async function seederFormations(prisma: Client): Promise<number> {
     await prisma.formation.upsert({
       where: { id: f.id },
       create: { id: f.id, ...donnees, statut: STATUT_SEED, verifieLe: null },
-      update: donnees,
+      update: {},
     });
     const metiers = METIERS.filter(
       (m) =>
@@ -354,7 +354,7 @@ async function seederModeles(
         statut: STATUT_SEED,
         verifieLe: null,
       },
-      update: donnees,
+      update: {},
     });
   }
 }
@@ -371,7 +371,7 @@ async function seederReglesFraude(prisma: Client): Promise<void> {
     await prisma.regleFraude.upsert({
       where: { id: r.id },
       create: { id: r.id, ...donnees, actif: true },
-      update: donnees,
+      update: {},
     });
   }
 }
@@ -417,7 +417,7 @@ async function seederAdmin(prisma: Client, admin: AdminEnv | null): Promise<stri
       totpActive: false,
       totpSecret: null,
     },
-    update: { motDePasseHache, role: "ADMIN" },
+    update: {},
   });
   return email;
 }

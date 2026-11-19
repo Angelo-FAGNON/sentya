@@ -11,7 +11,10 @@ import { calculerRappels } from "../regles/rappels";
 import { formaterCout, mentionSource } from "../regles/sources";
 
 export const ETAPES_MAX = 3;
-/** L'opportunité vérifiée éventuelle est rattachée à l'étape 2 (l'action concrète). */
+/**
+ * L'opportunité vérifiée éventuelle est rattachée à l'étape 2 (l'action concrète).
+ * Elle n'est jamais recopiée dans le texte de l'étape.
+ */
 export const ORDRE_ETAPE_OPPORTUNITE = 2;
 
 export class PlanIndisponibleError extends Error {
@@ -98,16 +101,9 @@ export async function creerPlan(ctx: Contexte, entree: { userId: string; pisteId
       opportunite.verifieLe &&
       ordre === Math.min(ORDRE_ETAPE_OPPORTUNITE, modeles.length)
     ) {
+      // Seule la référence est gardée : l'offre est affichée au moment de la lecture du plan,
+      // et uniquement si elle est encore VERIFIEE (une offre suspendue disparaît partout).
       opportuniteId = opportunite.id;
-      lignes.push(
-        fr.opportunite({
-          titre: opportunite.titre,
-          lieu: opportunite.lieu,
-          contact: opportunite.contact,
-          verifieeLe: formaterDate(opportunite.verifieLe),
-        }),
-        fr.conseilAntiArnaque,
-      );
     }
     return {
       ordre,

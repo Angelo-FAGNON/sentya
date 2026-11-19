@@ -3,8 +3,19 @@
 // des compétences, 3 pistes ancrées, fiche, plan en 3 étapes, PDF, rappels J+3/J+7/J+30
 // avec horloge simulée, statuts, /supprimer en deux temps, idempotence, indisponibilité de l'IA.
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { executerRappel, fr, IAIndisponibleError, reprendreMessageEnAttente } from "@sentya/core";
-import { creerReferentiel, viderBase } from "../../../packages/core/test/outils/base";
+import {
+  executerRappel,
+  fr,
+  IAIndisponibleError,
+  reprendreMessageEnAttente,
+  signalerOpportunite,
+} from "@sentya/core";
+import {
+  creerJeune,
+  creerOpportuniteVerifiee,
+  creerReferentiel,
+  viderBase,
+} from "../../../packages/core/test/outils/base";
 import { creerEnvironnement, repondeurParcours, type Environnement } from "./outils";
 
 let env: Environnement;
@@ -317,5 +328,63 @@ describe("indisponibilité de Gemini", () => {
     expect(await reprendreMessageEnAttente(deps, user.id)).toBe(true);
     expect(String(nouveauxMessages().at(-1)?.text)).toContain("C'est juste ?");
     expect(await reprendreMessageEnAttente(deps, user.id)).toBe(false);
+  });
+});
+
+describe("opportunités vérifiées dans le plan", () => {
+  it("affiche l'offre, envoie le profil avec accord, la signale, puis la retire après 3 signalements", async () => {
+    const { jeune, prisma, nouveauxMessages, boutons, ctx } = env;
+    await consentir(env);
+    for (const reponse of REPONSES_TEXTE) await jeune.ecrit(reponse);
+    await jeune.appuie("etudes:aucun");
+    await jeune.appuie("objectif:EMPLOI");
+    await jeune.appuie("cv:non");
+    await jeune.appuie("comp:ok");
+    const offre = await creerOpportuniteVerifiee(prisma, { metierId: "bj-couture" });
+    const piste = await prisma.piste.findFirstOrThrow({ where: { metierId: "bj-couture" } });
+    nouveauxMessages();
+
+    // EF-09 : l'offre vérifiée apparaît avec sa date, "Signaler" et l'envoi du profil.
+    await jeune.appuie(`choisir:${piste.rang}`);
+    let messages = nouveauxMessages();
+    const messageOffre = messages.find((m) => String(m.text).includes("Apprenti couturier"));
+    expect(String(messageOffre?.text)).toContain("Vérifiée le 01/11/2026");
+    expect(String(messageOffre?.text)).toContain(fr.conseilAntiArnaque);
+    expect(boutons(messageOffre).map((b) => b.callback_data)).toEqual([
+      `sig:${offre.id}`,
+      `cand:${offre.id}`,
+    ]);
+
+    // RG-07 : rien n'est partagé avant l'accord explicite pour cette offre.
+    await jeune.appuie(`cand:${offre.id}`);
+    expect(String(nouveauxMessages()[0]?.text)).toContain("Atelier Exemple");
+    expect(await prisma.candidature.count()).toBe(0);
+    await jeune.appuie(`candok:${offre.id}`);
+    expect(env.textes(nouveauxMessages())).toEqual([fr.candidatureEnvoyee]);
+    expect((await prisma.candidature.findFirstOrThrow()).consentAt).toEqual(
+      ctx.horloge.maintenant(),
+    );
+
+    // EF-10 : signalement depuis le bot, avec un motif.
+    await jeune.appuie(`sig:${offre.id}`);
+    expect(env.textes(nouveauxMessages())).toEqual([fr.demandeMotifSignalement]);
+    await jeune.ecrit("Ils demandent de l'argent pour l'entretien.");
+    expect(env.textes(nouveauxMessages())).toEqual([fr.signalementMerci]);
+
+    // RG-06 : au 3e signalement, l'offre disparaît aussi du plan déjà créé.
+    for (const id of ["9001", "9002"]) {
+      const autre = await creerJeune(ctx, id);
+      await signalerOpportunite(ctx, {
+        opportuniteId: offre.id,
+        userId: autre.id,
+        motif: "Arnaque",
+      });
+    }
+    expect((await prisma.opportunite.findUniqueOrThrow({ where: { id: offre.id } })).statut).toBe(
+      "SUSPENDUE",
+    );
+    await jeune.ecrit("/plan");
+    messages = nouveauxMessages();
+    expect(messages.some((m) => String(m.text).includes("Apprenti couturier"))).toBe(false);
   });
 });

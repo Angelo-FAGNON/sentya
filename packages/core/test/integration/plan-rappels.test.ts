@@ -77,7 +77,8 @@ describe("EF-07 : plan en 3 étapes", () => {
     plan = await creerPlan(ctx, { userId: user.id, pisteId: couture.id });
     const etape2 = plan.etapes[1]!;
     expect(etape2.opportuniteId).toBe(brouillon.id);
-    expect(etape2.details).toContain("Vérifiée le 01/11/2026");
+    // Le texte de l'étape ne recopie pas l'offre : elle est affichée à la lecture, si encore vérifiée.
+    expect(etape2.details).not.toContain("Apprenti couturier");
   });
 });
 

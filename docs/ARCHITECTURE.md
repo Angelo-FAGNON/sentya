@@ -119,7 +119,27 @@ sentya/
         pdf/plan-pdf.ts               PDF du plan (pdfkit)
         audio.ts                      PCM vers OGG/Opus (ffmpeg)
       test/                           parcours complet simulé, serveur, configuration
-    web/                              site public, back-office, espace partenaire
+    web/
+      src/
+        app/page.tsx                  accueil : promesse, 3 étapes, lien t.me, QR code
+        app/confidentialite, conditions, suppression
+                                      pages publiques en français simple
+        app/monplan/[jeton]/          lien magique : GET affiche un bouton, POST consomme
+        app/admin/connexion, 2fa/     connexion (mot de passe + TOTP), enrôlement TOTP
+        app/admin/(bo)/               tableau de bord, CRUD du référentiel (métiers,
+                                      compétences, formations, programmes, modèles
+                                      d'étapes, opportunités, règles de fraude),
+                                      signalements, revue qualité ; partenaires,
+                                      utilisateurs et journal (ADMIN seulement)
+        app/partenaire/               inscription, connexion, offres, candidatures
+        app/api/health, api/auth/     santé ; Auth.js (contrôle de l'en-tête Origin)
+        auth.ts, auth.config.ts       Auth.js v5 : fournisseurs admin et partenaire
+        proxy.ts                      CSP avec nonce, protection des routes
+        lib/                          chiffrement TOTP, rôles, limiteur, schémas zod,
+                                      journal des accès, Origin, IP, contexte du noyau
+        composants/                   cadres public et admin, formulaires, fiches
+      test/                           TOTP, chiffrement, rôles, limiteur, schémas,
+                                      sécurité, textes publics, mots de passe
 ```
 
 ## 4. Flux principaux
