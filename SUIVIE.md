@@ -26,6 +26,7 @@ Les consignes de travail sont dans [INSTRUCTIONS.md](INSTRUCTIONS.md).
 
 ### 19 novembre 2026
 
+- Nouvelle page d'accueil et nouvel en-tête des pages publiques : exemple de conversation animé, chemin en 3 étapes, bande de confiance, questions fréquentes. Sentya est présenté comme un service : Telegram aujourd'hui, WhatsApp annoncé comme « bientôt » (`2611844`, fusion `7f69a32`). À faire : lancer `pnpm typecheck`, `pnpm lint`, les tests du site et `pnpm --filter @sentya/web build`, non exécutés faute de réseau pour installer les dépendances, puis vérifier le rendu des pages publiques.
 - Prompt `choix-pistes@2` : toujours exactement 3 pistes, raison en 20 mots au plus, condition en 15 mots au plus. Garde-fou en code au-delà de 22 et 17 mots. La v1 reste disponible pour expliquer les recommandations passées (`b480883`).
 - IA : Claude pour le raisonnement (sorties structurées, CV), Gemini pour l'audio seulement, réunis par `FournisseurComposite`. Sans clé Gemini, le bot demande d'écrire (`3c1d1d6`).
 - Corrections de recette : une offre suspendue disparaît de /plan, du PDF et de /monplan ; seed en création seule (ne modifie plus les fiches des curateurs) ; `APP_URL` du bot alignée sur le domaine du site (`c649e34`).
