@@ -3,7 +3,7 @@
 // - partenaire : e-mail et mot de passe.
 // Chaque tentative est limitée (5 échecs par 15 minutes par IP et e-mail) et journalisée.
 import { getPrisma } from "@sentya/db";
-import NextAuth, { type User } from "next-auth";
+import NextAuth, { CredentialsSignin, type User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { env } from "@/env";
@@ -120,7 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Un refus de connexion est déjà tracé dans le journal des accès : inutile de l'afficher en erreur.
   logger: {
     error(erreur) {
-      if (erreur.name === "CredentialsSignin") return;
+      if (erreur instanceof CredentialsSignin) return;
       journalWeb().error({ err: erreur }, "erreur Auth.js");
     },
     warn(code) {
