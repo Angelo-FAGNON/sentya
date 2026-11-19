@@ -8,3 +8,4 @@ coverage
 !.env.example
 packages/db/src/generated
 uploads
+next-env.d.ts
