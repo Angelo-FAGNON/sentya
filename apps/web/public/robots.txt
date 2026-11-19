@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin
+Disallow: /partenaire
+Disallow: /monplan
+Disallow: /api

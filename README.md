@@ -235,5 +235,9 @@ Les secrets ne sont lus que dans l'environnement, jamais dans le code.
 - **Une seule instance du bot** : la limitation du débit (20 messages par minute) et le verrou par jeune sont en mémoire. Pour plusieurs instances, il faudra les déplacer en base.
 - **Rappels** : ils partent entre 8 h et 20 h, heure du Bénin et du Togo (UTC+1). Un rappel prévu la nuit part le lendemain matin.
 - **Modèles Gemini** : les noms de modèles évoluent. Vérifier `GEMINI_MODEL` et `GEMINI_TTS_MODEL` sur la page des modèles de Google avant un déploiement.
+- **Poids de la page d'accueil** : 181 Ko transférés (compression gzip), 482 Ko non compressés pour un navigateur moderne. Le total non compressé atteint 593 Ko si l'on compte le polyfill que Next.js ne sert qu'aux très anciens navigateurs.
+- **Double authentification** : un code TOTP reste valable pendant sa fenêtre de 30 secondes et peut y être réutilisé (pas de mémorisation du dernier code utilisé).
+- **Adresse IP des visiteurs** : la limitation des tentatives de connexion et le journal des accès lisent l'en-tête `X-Forwarded-For`. Il n'est fiable que derrière Caddy, comme dans la configuration de production.
+- **Lien magique en local** : Telegram refuse les boutons vers `localhost`. En développement, le lien `/monplan` arrive donc en texte dans le message ; en production (HTTPS), il arrive en bouton.
 - **Candidatures** : le partenaire consulte les candidatures dans son espace. Il n'existe pas de notification par e-mail dans ce MVP.
 - **Hors périmètre** : WhatsApp (l'interface `Canal` du noyau le prépare), langues nationales, mentorat humain, application mobile, paiement.

@@ -20,6 +20,25 @@ export function telechargeurTelegram(jeton: string): Telechargeur {
   };
 }
 
+/**
+ * Telegram refuse les boutons-liens vers une adresse locale (localhost, 127.0.0.1...).
+ * En développement, le lien est alors ajouté au texte du message.
+ */
+export function urlAccepteeEnBouton(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    const locale =
+      hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
+      /^127\./.test(hostname) ||
+      hostname === "[::1]" ||
+      !hostname.includes(".");
+    return (protocol === "https:" || protocol === "http:") && !locale;
+  } catch {
+    return false;
+  }
+}
+
 export class TelegramCanal implements Canal {
   readonly nom = "TELEGRAM" as const;
 
@@ -30,13 +49,18 @@ export class TelegramCanal implements Canal {
 
   async envoyerTexte(destinataire: string, texte: string, options?: OptionsEnvoi): Promise<void> {
     let clavier: InlineKeyboard | undefined;
-    if (options?.boutons?.length || options?.lien) {
+    let corps = texte;
+    const lienEnBouton =
+      options?.lien && urlAccepteeEnBouton(options.lien.url) ? options.lien : undefined;
+    if (options?.lien && !lienEnBouton) corps = `${texte}\n${options.lien.url}`;
+    if (options?.boutons?.length || lienEnBouton) {
       clavier = new InlineKeyboard();
       // Un bouton par ligne : plus lisible sur petit écran.
-      for (const bouton of options.boutons ?? []) clavier.text(bouton.libelle, bouton.action).row();
-      if (options.lien) clavier.url(options.lien.libelle, options.lien.url).row();
+      for (const bouton of options?.boutons ?? [])
+        clavier.text(bouton.libelle, bouton.action).row();
+      if (lienEnBouton) clavier.url(lienEnBouton.libelle, lienEnBouton.url).row();
     }
-    await this.api.sendMessage(destinataire, texte, {
+    await this.api.sendMessage(destinataire, corps, {
       reply_markup: clavier,
       link_preview_options: { is_disabled: true },
     });
