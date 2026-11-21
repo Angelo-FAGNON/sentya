@@ -1,0 +1,18 @@
+{
+  "name": "sentya-demo-video",
+  "private": true,
+  "description": "Video de demonstration de 60 secondes pour le pitch Sentya",
+  "scripts": {
+    "qr": "node qr.js",
+    "audio": "node audio.js",
+    "video": "node render.js video ../sentya-pitch-60s.mp4 30",
+    "build": "node qr.js && node audio.js && node render.js video ../sentya-pitch-60s.mp4 30"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5",
+    "@fontsource-variable/inter": "^5",
+    "@fontsource/jetbrains-mono": "^5",
+    "puppeteer-core": "23.11.1",
+    "qrcode": "^1.5.4"
+  }
+}
